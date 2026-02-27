@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Mirror</title>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;400;600&display=swap" rel="stylesheet">
+
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    background: #0d0d0d;
+    font-family: 'Poppins', Arial, sans-serif;
+    overflow: hidden;
+    transition: background 0.5s;
+}
+
+/* Spiegel scherm */
+.mirror {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Glass / Mirror overlay effect */
+.glass {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,0.02);
+    backdrop-filter: blur(12px);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Begroeting links boven */
+.greeting {
+    position: absolute;
+    top: 30px;
+    left: 40px;
+    font-size: 30px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: white;
+    text-shadow: 0 0 15px rgba(255,255,255,0.2);
+    z-index: 1;
+}
+
+/* Tijd in midden */
+.clock {
+    font-size: 90px;
+    font-weight: 200;
+    color: white;
+    text-shadow: 0 0 20px rgba(255,255,255,0.2);
+    z-index: 1;
+}
+
+/* Nachtmodus */
+.nightmode .greeting,
+.nightmode .clock {
+    color: #88cfff;
+}
+
+.nightmode .glass {
+    background: rgba(255,255,255,0.01);
+}
+</style>
+</head>
+
+<body>
+
+<div class="mirror" id="mirrorScreen">
+    <div class="glass"></div>
+    <div class="greeting" id="greetingText"></div>
+    <div class="clock" id="clock"></div>
+</div>
+
+<script>
+function updateGreeting() {
+    const now = new Date();
+    const hour = now.getHours();
+    let greeting = "";
+
+    if (hour >= 5 && hour < 12) {
+        greeting = "Goedemorgen";
+        document.body.classList.remove("nightmode");
+    } else if (hour >= 12 && hour < 18) {
+        greeting = "Goedemiddag";
+        document.body.classList.remove("nightmode");
+    } else if (hour >= 18 && hour < 22) {
+        greeting = "Goedenavond";
+        document.body.classList.remove("nightmode");
+    } else {
+        greeting = "Goedenacht";
+        document.body.classList.add("nightmode");
+    }
+
+    document.getElementById("greetingText").textContent = greeting + ", Gebruiker";
+}
+
+function updateClock() {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    const seconds = String(now.getSeconds()).padStart(2, "0");
+
+    document.getElementById("clock").textContent = hours + ":" + minutes + ":" + seconds;
+}
+
+// Update elke seconde
+setInterval(() => {
+    updateClock();
+    updateGreeting();
+}, 1000);
+
+// Eerste keer direct updaten
+updateClock();
+updateGreeting();
+</script>
+
+</body>
+</html>
