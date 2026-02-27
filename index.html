@@ -5,31 +5,60 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Smart Mirror</title>
 
-<!-- Google Font -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;400;600&display=swap" rel="stylesheet">
 
 <style>
 body {
     margin: 0;
     padding: 0;
-    background: #0d0d0d;
     font-family: 'Poppins', Arial, sans-serif;
-    overflow: hidden;
-    transition: background 0.5s;
+    background: #0d0d0d;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
 }
 
-/* Spiegel scherm */
+input, button {
+    padding: 15px 20px;
+    font-size: 20px;
+    border: none;
+    border-radius: 8px;
+    outline: none;
+}
+
+input {
+    margin-right: 10px;
+    width: 200px;
+    text-align: center;
+    background: #1a1a1a;
+    color: white;
+}
+
+button {
+    background: #88cfff;
+    color: #0d0d0d;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background: #44aaff;
+}
+
+/* Mirror / main menu */
 .mirror {
     width: 100vw;
     height: 100vh;
-    display: flex;
+    display: none;
     flex-direction: column;
-    position: relative;
     justify-content: center;
     align-items: center;
+    position: relative;
 }
 
-/* Glass / Mirror overlay effect */
 .glass {
     position: absolute;
     top: 0;
@@ -42,20 +71,6 @@ body {
     z-index: 0;
 }
 
-/* Begroeting links boven */
-.greeting {
-    position: absolute;
-    top: 30px;
-    left: 40px;
-    font-size: 30px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    color: white;
-    text-shadow: 0 0 15px rgba(255,255,255,0.2);
-    z-index: 1;
-}
-
-/* Tijd in midden */
 .clock {
     font-size: 90px;
     font-weight: 200;
@@ -64,67 +79,77 @@ body {
     z-index: 1;
 }
 
-/* Nachtmodus */
-.nightmode .greeting,
 .nightmode .clock {
     color: #88cfff;
 }
-
-.nightmode .glass {
-    background: rgba(255,255,255,0.01);
-}
 </style>
 </head>
-
 <body>
 
+<!-- Lock screen -->
+<div id="lockScreen">
+    <input type="password" id="codeInput" placeholder="Enter code">
+    <button id="enterBtn">→</button>
+</div>
+
+<!-- Main mirror menu -->
 <div class="mirror" id="mirrorScreen">
     <div class="glass"></div>
-    <div class="greeting" id="greetingText"></div>
     <div class="clock" id="clock"></div>
 </div>
 
 <script>
-function updateGreeting() {
-    const now = new Date();
-    const hour = now.getHours();
-    let greeting = "";
+const correctCode = '8008';
+const lockScreen = document.getElementById('lockScreen');
+const mirrorScreen = document.getElementById('mirrorScreen');
+const codeInput = document.getElementById('codeInput');
+const enterBtn = document.getElementById('enterBtn');
 
-    if (hour >= 5 && hour < 12) {
-        greeting = "Goedemorgen";
-        document.body.classList.remove("nightmode");
-    } else if (hour >= 12 && hour < 18) {
-        greeting = "Goedemiddag";
-        document.body.classList.remove("nightmode");
-    } else if (hour >= 18 && hour < 22) {
-        greeting = "Goedenavond";
-        document.body.classList.remove("nightmode");
+// Check localStorage bij laden
+if(localStorage.getItem('accessGranted') === 'true') {
+    lockScreen.style.display = 'none';
+    mirrorScreen.style.display = 'flex';
+    startClock();
+}
+
+// Functie om main menu te tonen
+function unlock() {
+    if(codeInput.value === correctCode) {
+        localStorage.setItem('accessGranted', 'true');
+        lockScreen.style.display = 'none';
+        mirrorScreen.style.display = 'flex';
+        startClock();
     } else {
-        greeting = "Goedenacht";
-        document.body.classList.add("nightmode");
+        alert("Verkeerde code!");
+        codeInput.value = '';
     }
-
-    document.getElementById("greetingText").textContent = greeting + ", Gebruiker";
 }
 
-function updateClock() {
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, "0");
-    const minutes = String(now.getMinutes()).padStart(2, "0");
-    const seconds = String(now.getSeconds()).padStart(2, "0");
+enterBtn.addEventListener('click', unlock);
+codeInput.addEventListener('keydown', e => {
+    if(e.key === 'Enter') unlock();
+});
 
-    document.getElementById("clock").textContent = hours + ":" + minutes + ":" + seconds;
-}
+// Clock functie
+function startClock() {
+    const clock = document.getElementById('clock');
+    function updateClock() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2,"0");
+        const minutes = String(now.getMinutes()).padStart(2,"0");
+        const seconds = String(now.getSeconds()).padStart(2,"0");
+        clock.textContent = hours + ":" + minutes + ":" + seconds;
 
-// Update elke seconde
-setInterval(() => {
+        // Nachtmodus check
+        if(now.getHours() >= 22 || now.getHours() < 5) {
+            document.body.classList.add('nightmode');
+        } else {
+            document.body.classList.remove('nightmode');
+        }
+    }
     updateClock();
-    updateGreeting();
-}, 1000);
-
-// Eerste keer direct updaten
-updateClock();
-updateGreeting();
+    setInterval(updateClock, 1000);
+}
 </script>
 
 </body>
