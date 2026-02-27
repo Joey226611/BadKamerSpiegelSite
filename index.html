@@ -20,6 +20,13 @@ body {
     height: 100vh;
 }
 
+/* Input lockscreen */
+#lockScreen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 input, button {
     padding: 15px 20px;
     font-size: 20px;
@@ -42,10 +49,19 @@ button {
     cursor: pointer;
     font-weight: 600;
     transition: background 0.3s;
+    margin-top: 10px;
 }
 
 button:hover {
     background: #44aaff;
+}
+
+/* Foutmelding */
+#errorMsg {
+    margin-top: 10px;
+    color: #ff5555;
+    font-weight: 500;
+    display: none;
 }
 
 /* Mirror / main menu */
@@ -90,6 +106,7 @@ button:hover {
 <div id="lockScreen">
     <input type="password" id="codeInput" placeholder="Enter code">
     <button id="enterBtn">→</button>
+    <div id="errorMsg">Verkeerde code!</div>
 </div>
 
 <!-- Main mirror menu -->
@@ -104,6 +121,7 @@ const lockScreen = document.getElementById('lockScreen');
 const mirrorScreen = document.getElementById('mirrorScreen');
 const codeInput = document.getElementById('codeInput');
 const enterBtn = document.getElementById('enterBtn');
+const errorMsg = document.getElementById('errorMsg');
 
 // Check localStorage bij laden
 if(localStorage.getItem('accessGranted') === 'true') {
@@ -120,11 +138,12 @@ function unlock() {
         mirrorScreen.style.display = 'flex';
         startClock();
     } else {
-        alert("Verkeerde code!");
+        errorMsg.style.display = 'block';
         codeInput.value = '';
     }
 }
 
+// Event listeners
 enterBtn.addEventListener('click', unlock);
 codeInput.addEventListener('keydown', e => {
     if(e.key === 'Enter') unlock();
