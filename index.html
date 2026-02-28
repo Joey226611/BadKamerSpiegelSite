@@ -47,58 +47,41 @@ button {
     color: #0d0d0d;
     cursor: pointer;
     font-weight: 600;
-    transition: background 0.3s;
-}
-
-button:hover {
-    background: #44aaff;
 }
 
 #errorMsg {
     margin-top: 10px;
     color: #ff5555;
-    font-weight: 500;
     display: none;
 }
 
-/* Main Menu */
+/* Mirror */
 .mirror {
     width: 100vw;
     height: 100vh;
     display: none;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
     position: relative;
-    cursor: pointer;
 }
 
 .glass {
     position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
     height: 100%;
     background: rgba(255,255,255,0.02);
     backdrop-filter: blur(12px);
     pointer-events: none;
-    z-index: 0;
 }
 
 .clock {
-    font-size: 90px;
-    font-weight: 200;
-    color: white;
-    text-shadow: 0 0 20px rgba(255,255,255,0.2);
-    z-index: 1;
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    font-size: 90px;
+    font-weight: 200;
     transition: all 0.5s;
 }
 
-/* Clock & greeting positions in ChooseMenu */
 .clock.topright {
     top: 20px;
     right: 20px;
@@ -116,25 +99,23 @@ button:hover {
     display: none;
 }
 
-/* ChooseMenu */
+/* Choose Menu */
 #chooseMenu {
-    display: none;
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    display: flex;
+    display: none;
     gap: 40px;
     opacity: 0;
-    transition: opacity 0.8s ease;
-    z-index: 2;
+    transition: opacity 0.6s ease;
 }
 
-#chooseMenu.show {
+#chooseMenu.active {
+    display: flex;
     opacity: 1;
 }
 
-/* Buttons as images */
 .chooseBtn {
     width: 120px;
     height: 120px;
@@ -149,18 +130,19 @@ button:hover {
 </head>
 <body>
 
-<!-- Lock screen -->
+<!-- Lock -->
 <div id="lockScreen">
     <input type="password" id="codeInput" placeholder="Enter code">
     <button id="enterBtn">→</button>
     <div id="errorMsg">Verkeerde code!</div>
 </div>
 
-<!-- Main Mirror Menu -->
+<!-- Mirror -->
 <div class="mirror" id="mirrorScreen">
     <div class="glass"></div>
     <div class="clock" id="clock"></div>
-    <div id="greeting">Gebruiker</div>
+    <div id="greeting"></div>
+
     <div id="chooseMenu">
         <img src="images/Icons/MusicMode.png" class="chooseBtn" id="musicBtn">
         <img src="images/Icons/MirrorMode.png" class="chooseBtn" id="mirrorBtn">
@@ -170,6 +152,7 @@ button:hover {
 
 <script>
 const correctCode = '8008';
+
 const lockScreen = document.getElementById('lockScreen');
 const mirrorScreen = document.getElementById('mirrorScreen');
 const codeInput = document.getElementById('codeInput');
@@ -180,20 +163,21 @@ const clock = document.getElementById('clock');
 const greeting = document.getElementById('greeting');
 const chooseMenu = document.getElementById('chooseMenu');
 
-let mirrorModeTimer;
+let mirrorMode = false;
+let mirrorTimer = null;
 
-// --- Lockscreen ---
-if(localStorage.getItem('accessGranted') === 'true') {
+/* Unlock */
+if(localStorage.getItem('accessGranted') === 'true'){
     lockScreen.style.display = 'none';
-    mirrorScreen.style.display = 'flex';
+    mirrorScreen.style.display = 'block';
     startClock();
 }
 
-function unlock() {
-    if(codeInput.value === correctCode) {
+function unlock(){
+    if(codeInput.value === correctCode){
         localStorage.setItem('accessGranted', 'true');
         lockScreen.style.display = 'none';
-        mirrorScreen.style.display = 'flex';
+        mirrorScreen.style.display = 'block';
         startClock();
     } else {
         errorMsg.style.display = 'block';
@@ -201,61 +185,89 @@ function unlock() {
     }
 }
 
-enterBtn.addEventListener('click', unlock);
-codeInput.addEventListener('keydown', e => {
+enterBtn.onclick = unlock;
+codeInput.addEventListener('keydown', e=>{
     if(e.key === 'Enter') unlock();
 });
 
-// --- Clock ---
-function startClock() {
-    function updateClock() {
-        const now = new Date();
-        const hours = String(now.getHours()).padStart(2,"0");
-        const minutes = String(now.getMinutes()).padStart(2,"0");
-        const seconds = String(now.getSeconds()).padStart(2,"0");
-        clock.textContent = hours + ":" + minutes + ":" + seconds;
+/* Clock */
+function updateGreeting(){
+    const hour = new Date().getHours();
+    let text;
 
-        // Nachtmodus
-        if(now.getHours() >= 22 || now.getHours() < 5) {
-            document.body.classList.add('nightmode');
-        } else {
-            document.body.classList.remove('nightmode');
-        }
-    }
-    updateClock();
-    setInterval(updateClock, 1000);
+    if(hour >=5 && hour <12) text = "Goedemorgen";
+    else if(hour >=12 && hour <18) text = "Goedemiddag";
+    else if(hour >=18 && hour <22) text = "Goedenavond";
+    else text = "Goedenacht";
+
+    greeting.textContent = text + ", Gebruiker";
 }
 
-// --- ChooseMenu ---
-mirrorScreen.addEventListener('click', (e)=>{
-    if(e.target.id === 'chooseMenu' || e.target.classList.contains('chooseBtn')) return; // Klik op menu zelf doet niks
-    // Toon ChooseMenu
-    chooseMenu.classList.add('show');
-    clock.classList.add('topright');
-    greeting.style.display = 'block';
+function startClock(){
+    function update(){
+        const now = new Date();
+        clock.textContent =
+            String(now.getHours()).padStart(2,'0') + ":" +
+            String(now.getMinutes()).padStart(2,'0') + ":" +
+            String(now.getSeconds()).padStart(2,'0');
+
+        updateGreeting();
+    }
+    update();
+    setInterval(update,1000);
+}
+
+/* Screen click logic */
+mirrorScreen.addEventListener('click', e=>{
+
+    // Mirror mode klik = terug naar choose
+    if(mirrorMode){
+        mirrorMode = false;
+        chooseMenu.classList.add('active');
+        greeting.style.display = 'block';
+        return;
+    }
+
+    // Alleen openen als menu niet actief is
+    if(!chooseMenu.classList.contains('active')){
+        chooseMenu.classList.add('active');
+        clock.classList.add('topright');
+        greeting.style.display = 'block';
+    }
 });
 
-// Buttons
-document.getElementById('musicBtn').addEventListener('click', ()=>{
-    alert("Music Mode placeholder"); // later functionaliteit
-});
-document.getElementById('mirrorBtn').addEventListener('click', ()=>{
-    // Clear texts
-    chooseMenu.classList.remove('show');
+/* Buttons werken alleen als menu actief is */
+document.getElementById('mirrorBtn').onclick = function(e){
+    if(!chooseMenu.classList.contains('active')) return;
+
+    e.stopPropagation();
+    mirrorMode = true;
+    chooseMenu.classList.remove('active');
     greeting.style.display = 'none';
-    // timer van 1 uur terug naar main menu
-    mirrorModeTimer = setTimeout(()=>{
-        chooseMenu.classList.add('show');
+
+    mirrorTimer = setTimeout(()=>{
+        mirrorMode = false;
+        chooseMenu.classList.add('active');
         greeting.style.display = 'block';
-    }, 3600000); // 1 uur
-});
-document.getElementById('homeBtn').addEventListener('click', ()=>{
-    chooseMenu.classList.remove('show');
+    }, 3600000);
+};
+
+document.getElementById('homeBtn').onclick = function(e){
+    if(!chooseMenu.classList.contains('active')) return;
+
+    e.stopPropagation();
+    chooseMenu.classList.remove('active');
     greeting.style.display = 'none';
     clock.classList.remove('topright');
-});
+};
+
+document.getElementById('musicBtn').onclick = function(e){
+    if(!chooseMenu.classList.contains('active')) return;
+
+    e.stopPropagation();
+    alert("Music Mode komt later 😉");
+};
 </script>
 
 </body>
 </html>
-
