@@ -11,7 +11,7 @@
 body {
     margin: 0;
     padding: 0;
-    font-family: 'Poppins', Arial, sans-serif;
+    font-family: 'Poppins', sans-serif;
     background: #0d0d0d;
     color: white;
     overflow: hidden;
@@ -29,30 +29,21 @@ body {
 input, button {
     padding: 15px 20px;
     font-size: 20px;
-    border: none;
     border-radius: 8px;
+    border: none;
     outline: none;
 }
 
 input {
-    margin-bottom: 10px;
-    width: 200px;
-    text-align: center;
     background: #1a1a1a;
     color: white;
+    margin-bottom: 10px;
+    text-align: center;
 }
 
 button {
     background: #88cfff;
-    color: #0d0d0d;
     cursor: pointer;
-    font-weight: 600;
-}
-
-#errorMsg {
-    margin-top: 10px;
-    color: #ff5555;
-    display: none;
 }
 
 /* Mirror */
@@ -61,17 +52,19 @@ button {
     height: 100vh;
     display: none;
     position: relative;
+    overflow: hidden;
 }
 
 .glass {
     position: absolute;
     width: 100%;
     height: 100%;
-    background: rgba(255,255,255,0.02);
     backdrop-filter: blur(12px);
+    background: rgba(255,255,255,0.02);
     pointer-events: none;
 }
 
+/* Clock */
 .clock {
     position: absolute;
     top: 50%;
@@ -79,65 +72,79 @@ button {
     transform: translate(-50%, -50%);
     font-size: 90px;
     font-weight: 200;
-    transition: all 0.5s;
+    transition: all 0.7s cubic-bezier(.4,0,.2,1);
 }
 
 .clock.topright {
-    top: 20px;
-    right: 20px;
+    top: 25px;
+    right: 25px;
     left: auto;
-    transform: none;
+    transform: translate(0,0);
     font-size: 50px;
 }
 
+/* Greeting */
 #greeting {
     position: absolute;
-    top: 20px;
-    left: 20px;
+    top: 25px;
+    left: 25px;
     font-size: 24px;
     font-weight: 600;
-    display: none;
-}
-
-/* Choose Menu */
-#chooseMenu {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    display: none;
-    gap: 40px;
     opacity: 0;
     transition: opacity 0.6s ease;
 }
 
-#chooseMenu.active {
-    display: flex;
+#greeting.show {
     opacity: 1;
+}
+
+/* ChooseMenu */
+#chooseMenu {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -40%) scale(0.95);
+    display: flex;
+    gap: 50px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.6s cubic-bezier(.4,0,.2,1);
+}
+
+#chooseMenu.active {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    pointer-events: auto;
 }
 
 .chooseBtn {
     width: 120px;
     height: 120px;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: transform 0.25s ease;
 }
 
 .chooseBtn:hover {
     transform: scale(1.1);
 }
+
+/* Fade overlay effect */
+.fadeOut {
+    animation: fadeOut 0.6s forwards;
+}
+
+@keyframes fadeOut {
+    to { opacity: 0; }
+}
 </style>
 </head>
 <body>
 
-<!-- Lock -->
 <div id="lockScreen">
     <input type="password" id="codeInput" placeholder="Enter code">
     <button id="enterBtn">→</button>
-    <div id="errorMsg">Verkeerde code!</div>
 </div>
 
-<!-- Mirror -->
 <div class="mirror" id="mirrorScreen">
     <div class="glass"></div>
     <div class="clock" id="clock"></div>
@@ -151,121 +158,110 @@ button {
 </div>
 
 <script>
-const correctCode = '8008';
+const correctCode = "8008";
 
-const lockScreen = document.getElementById('lockScreen');
-const mirrorScreen = document.getElementById('mirrorScreen');
-const codeInput = document.getElementById('codeInput');
-const enterBtn = document.getElementById('enterBtn');
-const errorMsg = document.getElementById('errorMsg');
+const lockScreen = document.getElementById("lockScreen");
+const mirrorScreen = document.getElementById("mirrorScreen");
+const codeInput = document.getElementById("codeInput");
+const enterBtn = document.getElementById("enterBtn");
 
-const clock = document.getElementById('clock');
-const greeting = document.getElementById('greeting');
-const chooseMenu = document.getElementById('chooseMenu');
+const clock = document.getElementById("clock");
+const greeting = document.getElementById("greeting");
+const chooseMenu = document.getElementById("chooseMenu");
 
 let mirrorMode = false;
 let mirrorTimer = null;
 
 /* Unlock */
-if(localStorage.getItem('accessGranted') === 'true'){
-    lockScreen.style.display = 'none';
-    mirrorScreen.style.display = 'block';
+if(localStorage.getItem("accessGranted")==="true"){
+    lockScreen.style.display="none";
+    mirrorScreen.style.display="block";
     startClock();
 }
 
 function unlock(){
-    if(codeInput.value === correctCode){
-        localStorage.setItem('accessGranted', 'true');
-        lockScreen.style.display = 'none';
-        mirrorScreen.style.display = 'block';
+    if(codeInput.value===correctCode){
+        localStorage.setItem("accessGranted","true");
+        lockScreen.style.display="none";
+        mirrorScreen.style.display="block";
         startClock();
-    } else {
-        errorMsg.style.display = 'block';
-        codeInput.value = '';
     }
 }
-
-enterBtn.onclick = unlock;
-codeInput.addEventListener('keydown', e=>{
-    if(e.key === 'Enter') unlock();
+enterBtn.onclick=unlock;
+codeInput.addEventListener("keydown",e=>{
+    if(e.key==="Enter") unlock();
 });
 
-/* Clock */
+/* Clock + Greeting */
 function updateGreeting(){
-    const hour = new Date().getHours();
-    let text;
-
-    if(hour >=5 && hour <12) text = "Goedemorgen";
-    else if(hour >=12 && hour <18) text = "Goedemiddag";
-    else if(hour >=18 && hour <22) text = "Goedenavond";
-    else text = "Goedenacht";
-
-    greeting.textContent = text + ", Gebruiker";
+    const h=new Date().getHours();
+    let t;
+    if(h>=5&&h<12)t="Goedemorgen";
+    else if(h>=12&&h<18)t="Goedemiddag";
+    else if(h>=18&&h<22)t="Goedenavond";
+    else t="Goedenacht";
+    greeting.textContent=t+", Gebruiker";
 }
 
 function startClock(){
     function update(){
-        const now = new Date();
-        clock.textContent =
-            String(now.getHours()).padStart(2,'0') + ":" +
-            String(now.getMinutes()).padStart(2,'0') + ":" +
-            String(now.getSeconds()).padStart(2,'0');
-
+        const n=new Date();
+        clock.textContent=
+            String(n.getHours()).padStart(2,'0')+":"+
+            String(n.getMinutes()).padStart(2,'0')+":"+
+            String(n.getSeconds()).padStart(2,'0');
         updateGreeting();
     }
     update();
     setInterval(update,1000);
 }
 
-/* Screen click logic */
-mirrorScreen.addEventListener('click', e=>{
+/* Screen Click */
+mirrorScreen.addEventListener("click",e=>{
 
-    // Mirror mode klik = terug naar choose
     if(mirrorMode){
-        mirrorMode = false;
-        chooseMenu.classList.add('active');
-        greeting.style.display = 'block';
+        mirrorMode=false;
+        chooseMenu.classList.add("active");
+        greeting.classList.add("show");
         return;
     }
 
-    // Alleen openen als menu niet actief is
-    if(!chooseMenu.classList.contains('active')){
-        chooseMenu.classList.add('active');
-        clock.classList.add('topright');
-        greeting.style.display = 'block';
+    if(!chooseMenu.classList.contains("active")){
+        clock.classList.add("topright");
+        greeting.classList.add("show");
+        chooseMenu.classList.add("active");
     }
 });
 
-/* Buttons werken alleen als menu actief is */
-document.getElementById('mirrorBtn').onclick = function(e){
-    if(!chooseMenu.classList.contains('active')) return;
-
+/* Buttons */
+document.getElementById("mirrorBtn").onclick=function(e){
+    if(!chooseMenu.classList.contains("active")) return;
     e.stopPropagation();
-    mirrorMode = true;
-    chooseMenu.classList.remove('active');
-    greeting.style.display = 'none';
 
-    mirrorTimer = setTimeout(()=>{
-        mirrorMode = false;
-        chooseMenu.classList.add('active');
-        greeting.style.display = 'block';
-    }, 3600000);
+    mirrorMode=true;
+    chooseMenu.classList.remove("active");
+    greeting.classList.remove("show");
+
+    mirrorTimer=setTimeout(()=>{
+        mirrorMode=false;
+        chooseMenu.classList.add("active");
+        greeting.classList.add("show");
+    },3600000);
 };
 
-document.getElementById('homeBtn').onclick = function(e){
-    if(!chooseMenu.classList.contains('active')) return;
-
+document.getElementById("homeBtn").onclick=function(e){
+    if(!chooseMenu.classList.contains("active")) return;
     e.stopPropagation();
-    chooseMenu.classList.remove('active');
-    greeting.style.display = 'none';
-    clock.classList.remove('topright');
+
+    chooseMenu.classList.remove("active");
+    greeting.classList.remove("show");
+    clock.classList.remove("topright");
 };
 
-document.getElementById('musicBtn').onclick = function(e){
-    if(!chooseMenu.classList.contains('active')) return;
-
+document.getElementById("musicBtn").onclick=function(e){
+    if(!chooseMenu.classList.contains("active")) return;
     e.stopPropagation();
-    alert("Music Mode komt later 😉");
+    alert("Music Mode komt later 😎");
 };
 </script>
 
