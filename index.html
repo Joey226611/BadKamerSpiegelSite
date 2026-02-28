@@ -2,266 +2,270 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Mirror</title>
+<meta name="viewport" content="width=320">
+<title>Joey Interface</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
 body {
-    margin: 0;
-    padding: 0;
-    font-family: 'Poppins', sans-serif;
-    background: #0d0d0d;
-    color: white;
-    overflow: hidden;
+    margin:0;
+    padding:0;
+    background:#0f0f0f;
+    color:white;
+    font-family:'Inter', sans-serif;
+    overflow:hidden;
+    user-select:none;
 }
 
-/* Lockscreen */
+/* Smooth transitions */
+.fade {
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.hidden {
+    opacity:0;
+    pointer-events:none;
+    transform:scale(0.98);
+}
+
+.visible {
+    opacity:1;
+    pointer-events:auto;
+    transform:scale(1);
+}
+
+/* Lock Screen */
 #lockScreen {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-}
-
-input, button {
-    padding: 15px 20px;
-    font-size: 20px;
-    border-radius: 8px;
-    border: none;
-    outline: none;
+    position:absolute;
+    width:100%;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    gap:15px;
+    background:#0f0f0f;
 }
 
 input {
-    background: #1a1a1a;
-    color: white;
-    margin-bottom: 10px;
-    text-align: center;
+    padding:8px;
+    font-size:16px;
+    width:120px;
+    text-align:center;
+    border-radius:6px;
+    border:none;
 }
 
 button {
-    background: #88cfff;
-    cursor: pointer;
+    padding:6px 12px;
+    font-size:14px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
 }
 
-/* Mirror */
-.mirror {
-    width: 100vw;
-    height: 100vh;
-    display: none;
-    position: relative;
-    overflow: hidden;
+/* Main Menu */
+#mainMenu, #chooseMenu {
+    position:absolute;
+    width:100%;
+    height:100%;
 }
 
-.glass {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    backdrop-filter: blur(12px);
-    background: rgba(255,255,255,0.02);
-    pointer-events: none;
+#clock {
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%, -50%);
+    font-size:42px;
+    font-weight:600;
 }
 
-/* Clock */
-.clock {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 90px;
-    font-weight: 200;
-    transition: all 0.7s cubic-bezier(.4,0,.2,1);
+/* Choose Menu */
+#clockSmall {
+    position:absolute;
+    top:10px;
+    right:15px;
+    font-size:18px;
+    font-weight:600;
 }
 
-.clock.topright {
-    top: 25px;
-    right: 25px;
-    left: auto;
-    transform: translate(0,0);
-    font-size: 50px;
-}
-
-/* Greeting */
 #greeting {
-    position: absolute;
-    top: 25px;
-    left: 25px;
-    font-size: 24px;
-    font-weight: 600;
-    opacity: 0;
-    transition: opacity 0.6s ease;
+    position:absolute;
+    top:10px;
+    left:15px;
+    font-size:16px;
 }
 
-#greeting.show {
-    opacity: 1;
+#buttons {
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%, -50%);
+    display:flex;
+    gap:20px;
 }
 
-/* ChooseMenu */
-#chooseMenu {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -40%) scale(0.95);
-    display: flex;
-    gap: 50px;
-    opacity: 0;
-    pointer-events: none;
-    transition: all 0.6s cubic-bezier(.4,0,.2,1);
+.iconBtn {
+    width:70px;
+    height:70px;
+    cursor:pointer;
+    transition:transform 0.3s ease, opacity 0.3s ease;
 }
 
-#chooseMenu.active {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-    pointer-events: auto;
-}
-
-.chooseBtn {
-    width: 120px;
-    height: 120px;
-    cursor: pointer;
-    transition: transform 0.25s ease;
-}
-
-.chooseBtn:hover {
-    transform: scale(1.1);
-}
-
-/* Fade overlay effect */
-.fadeOut {
-    animation: fadeOut 0.6s forwards;
-}
-
-@keyframes fadeOut {
-    to { opacity: 0; }
+.iconBtn:hover {
+    transform:scale(1.1);
 }
 </style>
 </head>
 <body>
 
+<!-- LOCK -->
 <div id="lockScreen">
-    <input type="password" id="codeInput" placeholder="Enter code">
-    <button id="enterBtn">→</button>
+    <h2>Enter Code</h2>
+    <input type="password" id="codeInput" maxlength="4">
+    <button onclick="checkCode()">→</button>
 </div>
 
-<div class="mirror" id="mirrorScreen">
-    <div class="glass"></div>
-    <div class="clock" id="clock"></div>
+<!-- MAIN MENU -->
+<div id="mainMenu" class="fade hidden">
+    <div id="clock"></div>
+</div>
+
+<!-- CHOOSE MENU -->
+<div id="chooseMenu" class="fade hidden">
+    <div id="clockSmall"></div>
     <div id="greeting"></div>
 
-    <div id="chooseMenu">
-        <img src="images/Icons/MusicMode.png" class="chooseBtn" id="musicBtn">
-        <img src="images/Icons/MirrorMode.png" class="chooseBtn" id="mirrorBtn">
-        <img src="images/Icons/HomeMenu.png" class="chooseBtn" id="homeBtn">
+    <div id="buttons">
+        <img src="images/Icons/MusicMode.png" class="iconBtn" onclick="musicMode()">
+        <img src="images/Icons/MirrorMode.png" class="iconBtn" onclick="mirrorMode()">
+        <img src="images/Icons/HomeMenu.png" class="iconBtn" onclick="goToMainMenu()">
     </div>
 </div>
 
 <script>
-const correctCode = "8008";
-
-const lockScreen = document.getElementById("lockScreen");
-const mirrorScreen = document.getElementById("mirrorScreen");
-const codeInput = document.getElementById("codeInput");
-const enterBtn = document.getElementById("enterBtn");
-
-const clock = document.getElementById("clock");
-const greeting = document.getElementById("greeting");
-const chooseMenu = document.getElementById("chooseMenu");
-
-let mirrorMode = false;
+let currentMenu = "lock";
+let chooseMenuTimer = null;
 let mirrorTimer = null;
 
-/* Unlock */
-if(localStorage.getItem("accessGranted")==="true"){
-    lockScreen.style.display="none";
-    mirrorScreen.style.display="block";
-    startClock();
-}
+const CHOOSE_TIMEOUT = 60000;      // 1 minuut
+const MIRROR_TIMEOUT = 3600000;    // 1 uur
 
-function unlock(){
-    if(codeInput.value===correctCode){
-        localStorage.setItem("accessGranted","true");
-        lockScreen.style.display="none";
-        mirrorScreen.style.display="block";
-        startClock();
-    }
+// CLOCK
+function updateClock(){
+    const now = new Date();
+    const time = now.toLocaleTimeString('nl-NL', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    document.getElementById("clock").innerText = time;
+    document.getElementById("clockSmall").innerText = time;
 }
-enterBtn.onclick=unlock;
-codeInput.addEventListener("keydown",e=>{
-    if(e.key==="Enter") unlock();
-});
+setInterval(updateClock,1000);
 
-/* Clock + Greeting */
+// GREETING
 function updateGreeting(){
-    const h=new Date().getHours();
-    let t;
-    if(h>=5&&h<12)t="Goedemorgen";
-    else if(h>=12&&h<18)t="Goedemiddag";
-    else if(h>=18&&h<22)t="Goedenavond";
-    else t="Goedenacht";
-    greeting.textContent=t+", Gebruiker";
+    const hour = new Date().getHours();
+    let greet = "Goedenavond";
+
+    if(hour >= 6 && hour < 12) greet = "Goedemorgen";
+    else if(hour >= 12 && hour < 18) greet = "Goedemiddag";
+    else if(hour >= 18 && hour < 23) greet = "Goedenavond";
+    else greet = "Goedenacht";
+
+    document.getElementById("greeting").innerText = greet;
 }
 
-function startClock(){
-    function update(){
-        const n=new Date();
-        clock.textContent=
-            String(n.getHours()).padStart(2,'0')+":"+
-            String(n.getMinutes()).padStart(2,'0')+":"+
-            String(n.getSeconds()).padStart(2,'0');
-        updateGreeting();
+// LOCK
+function checkCode(){
+    const input = document.getElementById("codeInput").value;
+    if(input === "8008"){
+        localStorage.setItem("accessGranted","true");
+        startMainMenu();
     }
-    update();
-    setInterval(update,1000);
 }
 
-/* Screen Click */
-mirrorScreen.addEventListener("click",e=>{
+// START
+function startMainMenu(){
+    document.getElementById("lockScreen").style.display="none";
+    goToMainMenu();
+}
 
-    if(mirrorMode){
-        mirrorMode=false;
-        chooseMenu.classList.add("active");
-        greeting.classList.add("show");
-        return;
+// MAIN MENU
+function goToMainMenu(){
+    clearTimeout(chooseMenuTimer);
+    clearTimeout(mirrorTimer);
+
+    currentMenu = "main";
+    document.getElementById("chooseMenu").classList.add("hidden");
+    document.getElementById("mainMenu").classList.remove("hidden");
+    document.getElementById("mainMenu").classList.add("visible");
+}
+
+// CHOOSE MENU
+function goToChooseMenu(){
+    if(currentMenu !== "main") return;
+
+    currentMenu = "choose";
+
+    document.getElementById("mainMenu").classList.add("hidden");
+    document.getElementById("chooseMenu").classList.remove("hidden");
+    document.getElementById("chooseMenu").classList.add("visible");
+
+    updateGreeting();
+    startChooseTimer();
+}
+
+// CHOOSE TIMER
+function startChooseTimer(){
+    clearTimeout(chooseMenuTimer);
+    chooseMenuTimer = setTimeout(()=>{
+        if(currentMenu === "choose"){
+            goToMainMenu();
+        }
+    }, CHOOSE_TIMEOUT);
+}
+
+function resetChooseTimer(){
+    if(currentMenu === "choose"){
+        startChooseTimer();
     }
+}
 
-    if(!chooseMenu.classList.contains("active")){
-        clock.classList.add("topright");
-        greeting.classList.add("show");
-        chooseMenu.classList.add("active");
+// MIRROR MODE
+function mirrorMode(){
+    if(currentMenu !== "choose") return;
+
+    currentMenu = "mirror";
+    document.getElementById("chooseMenu").classList.add("hidden");
+
+    mirrorTimer = setTimeout(()=>{
+        goToMainMenu();
+    }, MIRROR_TIMEOUT);
+}
+
+function musicMode(){
+    if(currentMenu !== "choose") return;
+    alert("Music Mode komt later 🎵");
+}
+
+// GLOBAL CLICK
+document.addEventListener("click",(e)=>{
+    if(currentMenu === "main"){
+        goToChooseMenu();
+    }
+    else if(currentMenu === "choose"){
+        resetChooseTimer();
+    }
+    else if(currentMenu === "mirror"){
+        goToChooseMenu();
     }
 });
 
-/* Buttons */
-document.getElementById("mirrorBtn").onclick=function(e){
-    if(!chooseMenu.classList.contains("active")) return;
-    e.stopPropagation();
-
-    mirrorMode=true;
-    chooseMenu.classList.remove("active");
-    greeting.classList.remove("show");
-
-    mirrorTimer=setTimeout(()=>{
-        mirrorMode=false;
-        chooseMenu.classList.add("active");
-        greeting.classList.add("show");
-    },3600000);
-};
-
-document.getElementById("homeBtn").onclick=function(e){
-    if(!chooseMenu.classList.contains("active")) return;
-    e.stopPropagation();
-
-    chooseMenu.classList.remove("active");
-    greeting.classList.remove("show");
-    clock.classList.remove("topright");
-};
-
-document.getElementById("musicBtn").onclick=function(e){
-    if(!chooseMenu.classList.contains("active")) return;
-    e.stopPropagation();
-    alert("Music Mode komt later 😎");
+// AUTO LOGIN CHECK
+window.onload = ()=>{
+    updateClock();
+    if(localStorage.getItem("accessGranted") === "true"){
+        startMainMenu();
+    }
 };
 </script>
 
