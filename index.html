@@ -106,138 +106,170 @@ body{
 </div>
 
 <script>
+const correctCode = "8008";
 
-let currentMenu = "lock";
-let chooseTimer = null;
+const lockScreen = document.getElementById("lockScreen");
+const mirrorScreen = document.getElementById("mirrorScreen");
+const codeInput = document.getElementById("codeInput");
+const enterBtn = document.getElementById("enterBtn");
+
+const clock = document.getElementById("clock");
+const greeting = document.getElementById("greeting");
+const chooseMenu = document.getElementById("chooseMenu");
+
+const musicBtn = document.getElementById("musicBtn");
+const mirrorBtn = document.getElementById("mirrorBtn");
+const homeBtn = document.getElementById("homeBtn");
+
+let mirrorMode = false;
 let mirrorTimer = null;
+let chooseTimer = null;
 
 const CHOOSE_TIMEOUT = 60000;      // 1 minuut
 const MIRROR_TIMEOUT = 3600000;    // 1 uur
 
-// CLOCK
-function updateClock(){
-    const now = new Date();
-    const time = now.toLocaleTimeString("nl-NL", {
-        hour:"2-digit",
-        minute:"2-digit",
-        second:"2-digit"
-    });
 
-    document.getElementById("clock").innerText = time;
-    document.getElementById("clockSmall").innerText = time;
-}
-setInterval(updateClock,1000);
+/* ===================== UNLOCK ===================== */
 
-// GREETING
-function updateGreeting(){
-    const hour = new Date().getHours();
-    let text = "Goedenavond";
-
-    if(hour >= 6 && hour < 12) text = "Goedemorgen";
-    else if(hour >= 12 && hour < 18) text = "Goedemiddag";
-    else if(hour >= 18 && hour < 23) text = "Goedenavond";
-    else text = "Goedenacht";
-
-    document.getElementById("greeting").innerText = text;
+if(localStorage.getItem("accessGranted")==="true"){
+    lockScreen.style.display="none";
+    mirrorScreen.style.display="block";
+    startClock();
 }
 
-// CODE CHECK
-function checkCode(){
-    if(document.getElementById("codeInput").value === "8008"){
-        localStorage.setItem("access","true");
-        startMainMenu();
+function unlock(){
+    if(codeInput.value===correctCode){
+        localStorage.setItem("accessGranted","true");
+        lockScreen.style.display="none";
+        mirrorScreen.style.display="block";
+        startClock();
     }
 }
 
-// START
-function startMainMenu(){
-    document.getElementById("lockScreen").style.display = "none";
-    goToMainMenu();
+enterBtn.onclick=unlock;
+codeInput.addEventListener("keydown",e=>{
+    if(e.key==="Enter") unlock();
+});
+
+
+/* ===================== CLOCK + GREETING ===================== */
+
+function updateGreeting(){
+    const h=new Date().getHours();
+    let t;
+
+    if(h>=5&&h<12)t="Goedemorgen";
+    else if(h>=12&&h<18)t="Goedemiddag";
+    else if(h>=18&&h<22)t="Goedenavond";
+    else t="Goedenacht";
+
+    greeting.textContent=t+", Gebruiker";
 }
 
-// MAIN MENU
-function goToMainMenu(){
+function startClock(){
+    function update(){
+        const n=new Date();
+        clock.textContent=
+            String(n.getHours()).padStart(2,'0')+":"+
+            String(n.getMinutes()).padStart(2,'0')+":"+
+            String(n.getSeconds()).padStart(2,'0');
+        updateGreeting();
+    }
+    update();
+    setInterval(update,1000);
+}
+
+
+/* ===================== CHOOSE TIMER ===================== */
+
+function startChooseTimer(){
     clearTimeout(chooseTimer);
-    clearTimeout(mirrorTimer);
 
-    currentMenu = "main";
-
-    document.getElementById("chooseMenu").style.display = "none";
-    document.getElementById("mainMenu").style.display = "block";
+    chooseTimer=setTimeout(()=>{
+        if(chooseMenu.classList.contains("active")){
+            closeChooseMenu();
+        }
+    },CHOOSE_TIMEOUT);
 }
 
-// CHOOSE MENU
-function goToChooseMenu(){
-    if(currentMenu !== "main") return;
+function resetChooseTimer(){
+    if(chooseMenu.classList.contains("active")){
+        startChooseTimer();
+    }
+}
 
-    currentMenu = "choose";
 
-    document.getElementById("mainMenu").style.display = "none";
-    document.getElementById("chooseMenu").style.display = "block";
+/* ===================== MENU CONTROL ===================== */
 
-    updateGreeting();
+function openChooseMenu(){
+    clock.classList.add("topright");
+    greeting.classList.add("show");
+    chooseMenu.classList.add("active");
     startChooseTimer();
 }
 
-// CHOOSE TIMER
-function startChooseTimer(){
+function closeChooseMenu(){
+    chooseMenu.classList.remove("active");
+    greeting.classList.remove("show");
+    clock.classList.remove("topright");
     clearTimeout(chooseTimer);
-    chooseTimer = setTimeout(function(){
-        if(currentMenu === "choose"){
-            goToMainMenu();
-        }
-    }, CHOOSE_TIMEOUT);
 }
 
-// MIRROR MODE
-function mirrorMode(){
-    if(currentMenu !== "choose") return;
 
-    currentMenu = "mirror";
-    document.getElementById("chooseMenu").style.display = "none";
+/* ===================== SCREEN CLICK ===================== */
 
-    mirrorTimer = setTimeout(function(){
-        goToMainMenu();
-    }, MIRROR_TIMEOUT);
-}
+mirrorScreen.addEventListener("click",e=>{
 
-// MUSIC MODE
-function musicMode(){
-    if(currentMenu !== "choose") return;
-    alert("Music Mode komt later");
-}
-
-// CLICK LOGIC
-
-// MainMenu klik → ChooseMenu
-document.getElementById("mainMenu").addEventListener("click", function(){
-    if(currentMenu === "main"){
-        goToChooseMenu();
-    }
-});
-
-// ChooseMenu klik → reset timer
-document.getElementById("chooseMenu").addEventListener("click", function(){
-    if(currentMenu === "choose"){
+    // Als mirrorMode actief → terug naar choose
+    if(mirrorMode){
+        mirrorMode=false;
+        chooseMenu.classList.add("active");
+        greeting.classList.add("show");
         startChooseTimer();
+        return;
+    }
+
+    // Als chooseMenu nog niet open → open hem
+    if(!chooseMenu.classList.contains("active")){
+        openChooseMenu();
+    }else{
+        // Als al open → reset timer
+        resetChooseTimer();
     }
 });
 
-// Mirror klik → terug naar Choose
-document.addEventListener("click", function(){
-    if(currentMenu === "mirror"){
-        goToChooseMenu();
-    }
-});
 
-// Auto login check
-window.onload = function(){
-    updateClock();
-    if(localStorage.getItem("access") === "true"){
-        startMainMenu();
-    }
+/* ===================== BUTTONS ===================== */
+
+mirrorBtn.onclick=function(e){
+    if(!chooseMenu.classList.contains("active")) return;
+    e.stopPropagation();
+
+    mirrorMode=true;
+    chooseMenu.classList.remove("active");
+    greeting.classList.remove("show");
+    clearTimeout(chooseTimer);
+
+    mirrorTimer=setTimeout(()=>{
+        mirrorMode=false;
+        closeChooseMenu();
+    },MIRROR_TIMEOUT);
 };
 
+homeBtn.onclick=function(e){
+    if(!chooseMenu.classList.contains("active")) return;
+    e.stopPropagation();
+
+    closeChooseMenu();
+};
+
+musicBtn.onclick=function(e){
+    if(!chooseMenu.classList.contains("active")) return;
+    e.stopPropagation();
+
+    alert("Music Mode komt later 😎");
+};
 </script>
 </body>
 </html>
+
