@@ -2,41 +2,20 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=320">
-<title>Joey Interface</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Main Interface</title>
 
 <style>
-body {
+body{
     margin:0;
-    padding:0;
-    background:#0f0f0f;
+    background:black;
     color:white;
-    font-family:'Inter', sans-serif;
+    font-family:Arial, sans-serif;
     overflow:hidden;
-    user-select:none;
 }
 
-/* Smooth transitions */
-.fade {
-    transition: opacity 0.6s ease, transform 0.6s ease;
-}
-
-.hidden {
-    opacity:0;
-    pointer-events:none;
-    transform:scale(0.98);
-}
-
-.visible {
-    opacity:1;
-    pointer-events:auto;
-    transform:scale(1);
-}
-
-/* Lock Screen */
-#lockScreen {
+/* Lock screen */
+#lockScreen{
     position:absolute;
     width:100%;
     height:100%;
@@ -45,76 +24,58 @@ body {
     justify-content:center;
     align-items:center;
     gap:15px;
-    background:#0f0f0f;
-}
-
-input {
-    padding:8px;
-    font-size:16px;
-    width:120px;
-    text-align:center;
-    border-radius:6px;
-    border:none;
-}
-
-button {
-    padding:6px 12px;
-    font-size:14px;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
 }
 
 /* Main Menu */
-#mainMenu, #chooseMenu {
-    position:absolute;
+#mainMenu{
+    display:none;
     width:100%;
     height:100%;
+    position:absolute;
 }
 
-#clock {
+#clock{
     position:absolute;
     top:50%;
     left:50%;
-    transform:translate(-50%, -50%);
-    font-size:42px;
-    font-weight:600;
+    transform:translate(-50%,-50%);
+    font-size:60px;
 }
 
 /* Choose Menu */
-#clockSmall {
+#chooseMenu{
+    display:none;
+    width:100%;
+    height:100%;
     position:absolute;
-    top:10px;
-    right:15px;
-    font-size:18px;
-    font-weight:600;
 }
 
-#greeting {
+#clockSmall{
     position:absolute;
     top:10px;
-    left:15px;
-    font-size:16px;
+    right:20px;
+    font-size:20px;
 }
 
-#buttons {
+#greeting{
+    position:absolute;
+    top:10px;
+    left:20px;
+    font-size:20px;
+}
+
+#buttons{
     position:absolute;
     top:50%;
     left:50%;
-    transform:translate(-50%, -50%);
+    transform:translate(-50%,-50%);
     display:flex;
-    gap:20px;
+    gap:30px;
 }
 
-.iconBtn {
-    width:70px;
-    height:70px;
+.iconBtn{
+    width:90px;
     cursor:pointer;
-    transition:transform 0.3s ease, opacity 0.3s ease;
-}
-
-.iconBtn:hover {
-    transform:scale(1.1);
 }
 </style>
 </head>
@@ -122,18 +83,18 @@ button {
 
 <!-- LOCK -->
 <div id="lockScreen">
-    <h2>Enter Code</h2>
+    <h2>Voer code in</h2>
     <input type="password" id="codeInput" maxlength="4">
-    <button onclick="checkCode()">→</button>
+    <button onclick="checkCode()">Enter</button>
 </div>
 
 <!-- MAIN MENU -->
-<div id="mainMenu" class="fade hidden">
+<div id="mainMenu">
     <div id="clock"></div>
 </div>
 
 <!-- CHOOSE MENU -->
-<div id="chooseMenu" class="fade hidden">
+<div id="chooseMenu">
     <div id="clockSmall"></div>
     <div id="greeting"></div>
 
@@ -145,8 +106,9 @@ button {
 </div>
 
 <script>
+
 let currentMenu = "lock";
-let chooseMenuTimer = null;
+let chooseTimer = null;
 let mirrorTimer = null;
 
 const CHOOSE_TIMEOUT = 60000;      // 1 minuut
@@ -155,7 +117,12 @@ const MIRROR_TIMEOUT = 3600000;    // 1 uur
 // CLOCK
 function updateClock(){
     const now = new Date();
-    const time = now.toLocaleTimeString('nl-NL', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    const time = now.toLocaleTimeString("nl-NL", {
+        hour:"2-digit",
+        minute:"2-digit",
+        second:"2-digit"
+    });
+
     document.getElementById("clock").innerText = time;
     document.getElementById("clockSmall").innerText = time;
 }
@@ -164,40 +131,39 @@ setInterval(updateClock,1000);
 // GREETING
 function updateGreeting(){
     const hour = new Date().getHours();
-    let greet = "Goedenavond";
+    let text = "Goedenavond";
 
-    if(hour >= 6 && hour < 12) greet = "Goedemorgen";
-    else if(hour >= 12 && hour < 18) greet = "Goedemiddag";
-    else if(hour >= 18 && hour < 23) greet = "Goedenavond";
-    else greet = "Goedenacht";
+    if(hour >= 6 && hour < 12) text = "Goedemorgen";
+    else if(hour >= 12 && hour < 18) text = "Goedemiddag";
+    else if(hour >= 18 && hour < 23) text = "Goedenavond";
+    else text = "Goedenacht";
 
-    document.getElementById("greeting").innerText = greet;
+    document.getElementById("greeting").innerText = text;
 }
 
-// LOCK
+// CODE CHECK
 function checkCode(){
-    const input = document.getElementById("codeInput").value;
-    if(input === "8008"){
-        localStorage.setItem("accessGranted","true");
+    if(document.getElementById("codeInput").value === "8008"){
+        localStorage.setItem("access","true");
         startMainMenu();
     }
 }
 
 // START
 function startMainMenu(){
-    document.getElementById("lockScreen").style.display="none";
+    document.getElementById("lockScreen").style.display = "none";
     goToMainMenu();
 }
 
 // MAIN MENU
 function goToMainMenu(){
-    clearTimeout(chooseMenuTimer);
+    clearTimeout(chooseTimer);
     clearTimeout(mirrorTimer);
 
     currentMenu = "main";
-    document.getElementById("chooseMenu").classList.add("hidden");
-    document.getElementById("mainMenu").classList.remove("hidden");
-    document.getElementById("mainMenu").classList.add("visible");
+
+    document.getElementById("chooseMenu").style.display = "none";
+    document.getElementById("mainMenu").style.display = "block";
 }
 
 // CHOOSE MENU
@@ -206,9 +172,8 @@ function goToChooseMenu(){
 
     currentMenu = "choose";
 
-    document.getElementById("mainMenu").classList.add("hidden");
-    document.getElementById("chooseMenu").classList.remove("hidden");
-    document.getElementById("chooseMenu").classList.add("visible");
+    document.getElementById("mainMenu").style.display = "none";
+    document.getElementById("chooseMenu").style.display = "block";
 
     updateGreeting();
     startChooseTimer();
@@ -216,18 +181,12 @@ function goToChooseMenu(){
 
 // CHOOSE TIMER
 function startChooseTimer(){
-    clearTimeout(chooseMenuTimer);
-    chooseMenuTimer = setTimeout(()=>{
+    clearTimeout(chooseTimer);
+    chooseTimer = setTimeout(function(){
         if(currentMenu === "choose"){
             goToMainMenu();
         }
     }, CHOOSE_TIMEOUT);
-}
-
-function resetChooseTimer(){
-    if(currentMenu === "choose"){
-        startChooseTimer();
-    }
 }
 
 // MIRROR MODE
@@ -235,39 +194,50 @@ function mirrorMode(){
     if(currentMenu !== "choose") return;
 
     currentMenu = "mirror";
-    document.getElementById("chooseMenu").classList.add("hidden");
+    document.getElementById("chooseMenu").style.display = "none";
 
-    mirrorTimer = setTimeout(()=>{
+    mirrorTimer = setTimeout(function(){
         goToMainMenu();
     }, MIRROR_TIMEOUT);
 }
 
+// MUSIC MODE
 function musicMode(){
     if(currentMenu !== "choose") return;
-    alert("Music Mode komt later 🎵");
+    alert("Music Mode komt later");
 }
 
-// GLOBAL CLICK
-document.addEventListener("click",(e)=>{
+// CLICK LOGIC
+
+// MainMenu klik → ChooseMenu
+document.getElementById("mainMenu").addEventListener("click", function(){
     if(currentMenu === "main"){
-        goToChooseMenu();
-    }
-    else if(currentMenu === "choose"){
-        resetChooseTimer();
-    }
-    else if(currentMenu === "mirror"){
         goToChooseMenu();
     }
 });
 
-// AUTO LOGIN CHECK
-window.onload = ()=>{
+// ChooseMenu klik → reset timer
+document.getElementById("chooseMenu").addEventListener("click", function(){
+    if(currentMenu === "choose"){
+        startChooseTimer();
+    }
+});
+
+// Mirror klik → terug naar Choose
+document.addEventListener("click", function(){
+    if(currentMenu === "mirror"){
+        goToChooseMenu();
+    }
+});
+
+// Auto login check
+window.onload = function(){
     updateClock();
-    if(localStorage.getItem("accessGranted") === "true"){
+    if(localStorage.getItem("access") === "true"){
         startMainMenu();
     }
 };
-</script>
 
+</script>
 </body>
 </html>
