@@ -7,23 +7,22 @@
 <style>
 
 body{
-font-family: Arial;
 background:#0f0f0f;
 color:white;
-margin:0;
+font-family:Arial;
 display:flex;
 justify-content:center;
 align-items:center;
 height:100vh;
+margin:0;
 }
 
-#main{
+#app{
 width:420px;
-background:#1c1c1c;
-border-radius:12px;
+background:#1e1e1e;
 padding:20px;
+border-radius:12px;
 text-align:center;
-box-shadow:0 0 20px rgba(0,0,0,0.6);
 }
 
 button{
@@ -32,19 +31,23 @@ padding:12px;
 margin-top:10px;
 border:none;
 border-radius:8px;
-background:#2b2b2b;
+background:#2a2a2a;
 color:white;
 font-size:16px;
 cursor:pointer;
 }
 
 button:hover{
-background:#3b3b3b;
+background:#3a3a3a;
 }
 
 .frame{
 display:none;
 margin-top:15px;
+}
+
+audio{
+width:100%;
 }
 
 iframe{
@@ -53,129 +56,161 @@ height:80px;
 border:none;
 }
 
-audio{
-width:100%;
-margin-top:10px;
-}
-
 </style>
+
 </head>
 
 <body>
 
-<div id="main">
+<div id="app">
 
-<h2>BadkamerOS Music</h2>
+<h2>Music</h2>
 
-<button onclick="openLocal()">Local muziek</button>
-<button onclick="openSpotifyChoice()">Spotify</button>
+<button onclick="openLocal()">Local Music</button>
+<button onclick="openSpotifyMenu()">Spotify</button>
 
 <div id="localFrame" class="frame">
-
 <input type="file" accept="audio/*" onchange="loadLocal(event)">
-<audio id="audioPlayer" controls></audio>
-
+<audio id="audio" controls></audio>
 </div>
 
-<div id="spotifyChoice" class="frame">
-
+<div id="spotifyMenu" class="frame">
 <button onclick="loginSpotify()">Login met eigen account</button>
 <button onclick="openDefaultSpotify()">Standaard Spotify</button>
+</div>
+
+<div id="spotifyPlayer" class="frame">
+
+<p id="deviceStatus">Spotify player laden...</p>
+
+<button onclick="playTest()">Test muziek</button>
 
 </div>
 
-<div id="spotifyFrame" class="frame">
+<div id="spotifyEmbed" class="frame">
 
-<iframe id="spotifyPlayer"
+<iframe
 src="https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM5M">
 </iframe>
 
-<button onclick="hideSpotify()">Sluit Spotify frame</button>
-
 </div>
 
 </div>
+
+<script src="https://sdk.scdn.co/spotify-player.js"></script>
 
 <script>
 
-const CLIENT_ID = "160369b6b21b47d8b8fa9da5590888f1";
-const REDIRECT_URI = "https://joey226611.github.io/BadKamerSpiegelSite/badkamerOSupdates.html";
-const SCOPES = "streaming user-read-email user-read-private";
+const CLIENT_ID="VUL_JE_CLIENT_ID_HIER";
+const REDIRECT_URI=window.location.origin+window.location.pathname;
+
+let accessToken=null;
 
 function hideAll(){
-document.getElementById("localFrame").style.display="none";
-document.getElementById("spotifyChoice").style.display="none";
-document.getElementById("spotifyFrame").style.display="none";
+
+document.querySelectorAll(".frame").forEach(f=>{
+f.style.display="none";
+})
+
 }
 
 function openLocal(){
+
 hideAll();
-document.getElementById("localFrame").style.display="block";
+localFrame.style.display="block";
+
 }
 
-function openSpotifyChoice(){
+function openSpotifyMenu(){
+
 hideAll();
-document.getElementById("spotifyChoice").style.display="block";
+spotifyMenu.style.display="block";
+
 }
 
 function openDefaultSpotify(){
-hideAll();
-document.getElementById("spotifyFrame").style.display="block";
-}
 
-function hideSpotify(){
-document.getElementById("spotifyFrame").style.display="none";
+hideAll();
+spotifyEmbed.style.display="block";
+
 }
 
 function loadLocal(event){
-const file = event.target.files[0];
-const audio = document.getElementById("audioPlayer");
-audio.src = URL.createObjectURL(file);
+
+const file=event.target.files[0];
+const audio=document.getElementById("audio");
+
+audio.src=URL.createObjectURL(file);
 audio.play();
+
 }
 
-function generateRandomString(length){
-const possible="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-let text="";
-for(let i=0;i<length;i++){
-text+=possible.charAt(Math.floor(Math.random()*possible.length));
-}
-return text;
-}
+function loginSpotify(){
 
-async function sha256(plain){
-const encoder=new TextEncoder();
-const data=encoder.encode(plain);
-return window.crypto.subtle.digest("SHA-256",data);
-}
+const scopes="streaming user-read-email user-read-private";
 
-function base64encode(input){
-return btoa(String.fromCharCode(...new Uint8Array(input)))
-.replace(/=/g,"")
-.replace(/\+/g,"-")
-.replace(/\//g,"_");
+const authURL=
+"https://accounts.spotify.com/authorize"+
+"?client_id="+CLIENT_ID+
+"&response_type=token"+
+"&redirect_uri="+encodeURIComponent(REDIRECT_URI)+
+"&scope="+encodeURIComponent(scopes);
+
+window.location=authURL;
+
 }
 
-async function loginSpotify(){
+function getTokenFromURL(){
 
-const codeVerifier=generateRandomString(64);
-const hashed=await sha256(codeVerifier);
-const codeChallenge=base64encode(hashed);
+const hash=window.location.hash;
 
-localStorage.setItem("spotify_code_verifier",codeVerifier);
+if(hash){
 
-const authUrl=new URL("https://accounts.spotify.com/authorize");
+const params=new URLSearchParams(hash.replace("#",""));
+accessToken=params.get("access_token");
 
-authUrl.search=new URLSearchParams({
-client_id:CLIENT_ID,
-response_type:"code",
-redirect_uri:REDIRECT_URI,
-scope:SCOPES,
-code_challenge_method:"S256",
-code_challenge:codeChallenge
-}).toString();
+}
 
-window.location.href=authUrl.toString();
+}
+
+window.onSpotifyWebPlaybackSDKReady=()=>{
+
+getTokenFromURL();
+
+if(!accessToken) return;
+
+hideAll();
+spotifyPlayer.style.display="block";
+
+const player=new Spotify.Player({
+name:"BadkamerOS Player",
+getOAuthToken:cb=>{cb(accessToken)},
+volume:0.5
+});
+
+player.addListener("ready",data=>{
+
+deviceStatus.innerText="Verbonden met Spotify 🎵";
+
+});
+
+player.connect();
+
+window.spotifyPlayer=player;
+
+};
+
+function playTest(){
+
+fetch("https://api.spotify.com/v1/me/player/play",{
+method:"PUT",
+headers:{
+Authorization:"Bearer "+accessToken
+},
+body:JSON.stringify({
+uris:["spotify:track:11dFghVXANMlKmJXsNCbNl"]
+})
+})
 
 }
 
