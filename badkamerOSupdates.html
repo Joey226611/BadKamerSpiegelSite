@@ -1,198 +1,61 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Mirror OS</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;400;600&display=swap" rel="stylesheet">
+<title>BadkamerOS Music</title>
 
 <style>
 
 body{
-margin:0;
-background:#0c0c0c;
+font-family: Arial;
+background:#0f0f0f;
 color:white;
-font-family:Poppins;
-overflow:hidden;
-}
-
-/* LOCK */
-
-#lockScreen{
+margin:0;
 display:flex;
-flex-direction:column;
 justify-content:center;
 align-items:center;
 height:100vh;
 }
 
-input{
-padding:15px;
-font-size:20px;
-background:#1a1a1a;
-border:none;
-color:white;
+#main{
+width:420px;
+background:#1c1c1c;
+border-radius:12px;
+padding:20px;
 text-align:center;
+box-shadow:0 0 20px rgba(0,0,0,0.6);
 }
 
 button{
-padding:15px;
-font-size:18px;
-background:#88cfff;
+width:100%;
+padding:12px;
+margin-top:10px;
 border:none;
+border-radius:8px;
+background:#2b2b2b;
+color:white;
+font-size:16px;
 cursor:pointer;
 }
 
-/* MIRROR */
+button:hover{
+background:#3b3b3b;
+}
 
-#mirror{
+.frame{
 display:none;
-width:100vw;
-height:100vh;
-position:relative;
+margin-top:15px;
 }
 
-/* CLOCK */
-
-#clock{
-position:absolute;
-top:50%;
-left:50%;
-transform:translate(-50%,-50%);
-font-size:90px;
-font-weight:200;
-transition:0.6s;
-}
-
-.topClock{
-top:25px;
-right:25px;
-left:auto;
-transform:none;
-font-size:50px;
-}
-
-/* GREETING */
-
-#greeting{
-position:absolute;
-top:25px;
-left:25px;
-font-size:24px;
-opacity:0;
-transition:0.5s;
-}
-
-.showGreeting{
-opacity:1;
-}
-
-/* CHOOSE MENU */
-
-#chooseMenu{
-position:absolute;
-top:50%;
-left:50%;
-transform:translate(-50%,-50%);
-display:flex;
-gap:60px;
-opacity:0;
-pointer-events:none;
-transition:0.6s;
-}
-
-#chooseMenu.active{
-opacity:1;
-pointer-events:auto;
-}
-
-.iconBtn{
-width:120px;
-cursor:pointer;
-transition:0.2s;
-}
-
-.iconBtn:hover{
-transform:scale(1.1);
-}
-
-/* MUSIC UI */
-
-#musicUI{
-position:absolute;
+iframe{
 width:100%;
-height:100%;
-background:#0b0b0b;
-display:none;
-flex-direction:column;
-}
-
-.header{
-display:flex;
-justify-content:space-between;
-padding:30px;
-font-size:28px;
-}
-
-.grid{
-display:flex;
-gap:40px;
-padding:40px;
-}
-
-.widget{
-width:200px;
-cursor:pointer;
-}
-
-.widget img{
-width:100%;
-border-radius:10px;
-}
-
-.track{
-display:flex;
-align-items:center;
-gap:20px;
-padding:10px;
-cursor:pointer;
-}
-
-#player{
-position:absolute;
-bottom:0;
-width:100%;
-background:#111;
-padding:20px;
-display:flex;
-gap:20px;
-align-items:center;
-}
-
-#spotifyFrame{
-display:none;
-width:100%;
-height:70%;
+height:80px;
 border:none;
 }
 
-/* SPOTIFY CHOICE */
-
-#spotifyChoice{
-position:absolute;
+audio{
 width:100%;
-height:100%;
-background:#0b0b0b;
-display:none;
-flex-direction:column;
-justify-content:center;
-align-items:center;
-gap:30px;
-}
-
-.choiceBtn{
-width:300px;
+margin-top:10px;
 }
 
 </style>
@@ -200,93 +63,34 @@ width:300px;
 
 <body>
 
-<!-- LOCKSCREEN -->
+<div id="main">
 
-<div id="lockScreen">
+<h2>BadkamerOS Music</h2>
 
-<input id="codeInput" type="password" placeholder="Enter code">
+<button onclick="openLocal()">Local muziek</button>
+<button onclick="openSpotifyChoice()">Spotify</button>
 
-<button onclick="unlock()">→</button>
+<div id="localFrame" class="frame">
 
-</div>
-
-<!-- MIRROR -->
-
-<div id="mirror">
-
-<div id="clock"></div>
-
-<div id="greeting"></div>
-
-<div id="chooseMenu">
-
-<img src="images/Icons/MusicMode.png" id="musicBtn" class="iconBtn">
-
-<img src="images/Icons/MirrorMode.png" id="mirrorBtn" class="iconBtn">
-
-<img src="images/Icons/HomeMenu.png" id="homeBtn" class="iconBtn">
+<input type="file" accept="audio/*" onchange="loadLocal(event)">
+<audio id="audioPlayer" controls></audio>
 
 </div>
 
-<!-- MUSIC -->
+<div id="spotifyChoice" class="frame">
 
-<div id="musicUI">
-
-<div class="header">
-
-<div>Music</div>
-
-<button onclick="closeMusic()">Back</button>
+<button onclick="loginSpotify()">Login met eigen account</button>
+<button onclick="openDefaultSpotify()">Standaard Spotify</button>
 
 </div>
 
-<div class="grid" id="widgets"></div>
+<div id="spotifyFrame" class="frame">
 
-<div id="playlist"></div>
+<iframe id="spotifyPlayer"
+src="https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM5M">
+</iframe>
 
-<div id="player">
-
-<div id="songInfo"></div>
-
-<button onclick="prev()">⏮</button>
-
-<button onclick="togglePlay()">⏯</button>
-
-<button onclick="next()">⏭</button>
-
-<button onclick="toggleShuffle()">🔀</button>
-
-<button onclick="toggleLoop()">🔁</button>
-
-<input type="range" id="progress">
-
-</div>
-
-<iframe id="spotifyFrame"></iframe>
-
-</div>
-
-<!-- SPOTIFY CHOICE -->
-
-<div id="spotifyChoice">
-
-<button class="choiceBtn" onclick="loginSpotify()">
-
-Inloggen met eigen account
-
-</button>
-
-<button class="choiceBtn" onclick="openSpotifyEmbed()">
-
-Standaard Spotify
-
-</button>
-
-<button class="choiceBtn" onclick="closeSpotifyChoice()">
-
-Terug
-
-</button>
+<button onclick="hideSpotify()">Sluit Spotify frame</button>
 
 </div>
 
@@ -294,327 +98,84 @@ Terug
 
 <script>
 
-/* LOCK */
+const CLIENT_ID = "VUL_HIER_JE_CLIENT_ID_IN";
+const REDIRECT_URI = "https://joey226611.github.io/BadKamerSpiegelSite/badkamerOSupdates.html";
+const SCOPES = "streaming user-read-email user-read-private";
 
-const code="8008"
-
-function unlock(){
-
-if(document.getElementById("codeInput").value===code){
-
-localStorage.setItem("mirrorAccess","true")
-
-startMirror()
-
+function hideAll(){
+document.getElementById("localFrame").style.display="none";
+document.getElementById("spotifyChoice").style.display="none";
+document.getElementById("spotifyFrame").style.display="none";
 }
 
+function openLocal(){
+hideAll();
+document.getElementById("localFrame").style.display="block";
 }
-
-if(localStorage.getItem("mirrorAccess")){
-
-startMirror()
-
-}
-
-function startMirror(){
-
-lockScreen.style.display="none"
-
-mirror.style.display="block"
-
-startClock()
-
-}
-
-/* CLOCK */
-
-function startClock(){
-
-setInterval(()=>{
-
-let d=new Date()
-
-clock.innerText=
-
-String(d.getHours()).padStart(2,"0")+":"+
-
-String(d.getMinutes()).padStart(2,"0")+":"+
-
-String(d.getSeconds()).padStart(2,"0")
-
-updateGreeting()
-
-},1000)
-
-}
-
-function updateGreeting(){
-
-let h=new Date().getHours()
-
-let g=""
-
-if(h<5)g="Goedenacht"
-
-else if(h<12)g="Goedemorgen"
-
-else if(h<18)g="Goedemiddag"
-
-else if(h<22)g="Goedenavond"
-
-else g="Goedenacht"
-
-greeting.innerText=g+", Gebruiker"
-
-}
-
-/* CHOOSE MENU */
-
-mirror.addEventListener("click",()=>{
-
-if(!chooseMenu.classList.contains("active")){
-
-clock.classList.add("topClock")
-
-greeting.classList.add("showGreeting")
-
-chooseMenu.classList.add("active")
-
-}
-
-})
-
-homeBtn.onclick=()=>{
-
-chooseMenu.classList.remove("active")
-
-clock.classList.remove("topClock")
-
-greeting.classList.remove("showGreeting")
-
-}
-
-/* MUSIC */
-
-musicBtn.onclick=()=>{
-
-musicUI.style.display="flex"
-
-buildWidgets()
-
-}
-
-function closeMusic(){
-
-musicUI.style.display="none"
-
-}
-
-/* PLAYLIST */
-
-const playlists=[
-
-{
-
-type:"local",
-
-title:"SummerHits2026",
-
-image:"images/MusicPlayerThumbnails/summer.png",
-
-tracks:[
-
-{
-
-title:"Sunset Drive",
-
-artist:"DJ Wave",
-
-file:"Music/summer1.mp3"
-
-},
-
-{
-
-title:"Beach Party",
-
-artist:"Ocean Beats",
-
-file:"Music/summer2.mp3"
-
-}
-
-]
-
-},
-
-{
-
-type:"spotify",
-
-title:"Spotify",
-
-image:"images/MusicPlayerThumbnails/spotify.png"
-
-}
-
-]
-
-/* BUILD WIDGETS */
-
-function buildWidgets(){
-
-widgets.innerHTML=""
-
-playlists.forEach((p,i)=>{
-
-let div=document.createElement("div")
-
-div.className="widget"
-
-div.innerHTML=`<img src="${p.image}"><div>${p.title}</div>`
-
-div.onclick=()=>{
-
-if(p.type==="local")openPlaylist(i)
-
-if(p.type==="spotify")openSpotifyChoice()
-
-}
-
-widgets.appendChild(div)
-
-})
-
-}
-
-/* LOCAL MUSIC */
-
-let audio=new Audio()
-
-let current=[]
-
-let index=0
-
-let shuffle=false
-
-let loop=false
-
-function openPlaylist(i){
-
-playlist.innerHTML=""
-
-current=playlists[i].tracks
-
-current.forEach((t,n)=>{
-
-let div=document.createElement("div")
-
-div.className="track"
-
-div.innerText=t.title+" - "+t.artist
-
-div.onclick=()=>play(n)
-
-playlist.appendChild(div)
-
-})
-
-}
-
-function play(i){
-
-index=i
-
-audio.src=current[i].file
-
-audio.play()
-
-songInfo.innerText=current[i].title+" - "+current[i].artist
-
-}
-
-function togglePlay(){
-
-if(audio.paused)audio.play()
-
-else audio.pause()
-
-}
-
-function next(){
-
-if(shuffle)index=Math.floor(Math.random()*current.length)
-
-else index=(index+1)%current.length
-
-play(index)
-
-}
-
-function prev(){
-
-index--
-
-if(index<0)index=current.length-1
-
-play(index)
-
-}
-
-function toggleShuffle(){
-
-shuffle=!shuffle
-
-}
-
-function toggleLoop(){
-
-loop=!loop
-
-audio.loop=loop
-
-}
-
-/* SPOTIFY */
 
 function openSpotifyChoice(){
-
-spotifyChoice.style.display="flex"
-
+hideAll();
+document.getElementById("spotifyChoice").style.display="block";
 }
 
-function closeSpotifyChoice(){
-
-spotifyChoice.style.display="none"
-
+function openDefaultSpotify(){
+hideAll();
+document.getElementById("spotifyFrame").style.display="block";
 }
 
-function openSpotifyEmbed(){
-
-spotifyChoice.style.display="none"
-
-spotifyFrame.style.display="block"
-
-spotifyFrame.src="https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM5M"
-
+function hideSpotify(){
+document.getElementById("spotifyFrame").style.display="none";
 }
 
-/* SPOTIFY LOGIN */
+function loadLocal(event){
+const file = event.target.files[0];
+const audio = document.getElementById("audioPlayer");
+audio.src = URL.createObjectURL(file);
+audio.play();
+}
 
-const CLIENT_ID="160369b6b21b47d8b8fa9da5590888f1"
+function generateRandomString(length){
+const possible="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+let text="";
+for(let i=0;i<length;i++){
+text+=possible.charAt(Math.floor(Math.random()*possible.length));
+}
+return text;
+}
 
-const REDIRECT="https://joey226611.github.io/BadKamerSpiegelSite/badkamerOSupdates.html"
+async function sha256(plain){
+const encoder=new TextEncoder();
+const data=encoder.encode(plain);
+return window.crypto.subtle.digest("SHA-256",data);
+}
 
-function loginSpotify(){
+function base64encode(input){
+return btoa(String.fromCharCode(...new Uint8Array(input)))
+.replace(/=/g,"")
+.replace(/\+/g,"-")
+.replace(/\//g,"_");
+}
 
-const scopes="streaming user-read-email user-read-private"
+async function loginSpotify(){
 
-const url=
+const codeVerifier=generateRandomString(64);
+const hashed=await sha256(codeVerifier);
+const codeChallenge=base64encode(hashed);
 
-`https://accounts.spotify.com/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT)}&scope=${encodeURIComponent(scopes)}&response_type=token&show_dialog=true`
+localStorage.setItem("spotify_code_verifier",codeVerifier);
 
-window.location=url
+const authUrl=new URL("https://accounts.spotify.com/authorize");
+
+authUrl.search=new URLSearchParams({
+client_id:CLIENT_ID,
+response_type:"code",
+redirect_uri:REDIRECT_URI,
+scope:SCOPES,
+code_challenge_method:"S256",
+code_challenge:codeChallenge
+}).toString();
+
+window.location.href=authUrl.toString();
 
 }
 
