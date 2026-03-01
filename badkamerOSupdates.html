@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>BadkamerOS Music</title>
+<title>BadkamerOS</title>
 
 <style>
 
@@ -10,16 +10,16 @@ body{
 background:#0f0f0f;
 color:white;
 font-family:Arial;
+margin:0;
 display:flex;
 justify-content:center;
 align-items:center;
 height:100vh;
-margin:0;
 }
 
 #app{
 width:420px;
-background:#1e1e1e;
+background:#1a1a1a;
 padding:20px;
 border-radius:12px;
 text-align:center;
@@ -29,10 +29,10 @@ button{
 width:100%;
 padding:12px;
 margin-top:10px;
+background:#2b2b2b;
+color:white;
 border:none;
 border-radius:8px;
-background:#2a2a2a;
-color:white;
 font-size:16px;
 cursor:pointer;
 }
@@ -46,13 +46,9 @@ display:none;
 margin-top:15px;
 }
 
-audio{
-width:100%;
-}
-
 iframe{
 width:100%;
-height:80px;
+height:90px;
 border:none;
 }
 
@@ -66,28 +62,18 @@ border:none;
 
 <h2>Music</h2>
 
-<button onclick="openLocal()">Local Music</button>
 <button onclick="openSpotifyMenu()">Spotify</button>
 
-<div id="localFrame" class="frame">
-<input type="file" accept="audio/*" onchange="loadLocal(event)">
-<audio id="audio" controls></audio>
-</div>
-
 <div id="spotifyMenu" class="frame">
-<button onclick="loginSpotify()">Login met eigen account</button>
+
+<button onclick="loginSpotify()">Inloggen met eigen account</button>
 <button onclick="openDefaultSpotify()">Standaard Spotify</button>
+
 </div>
 
 <div id="spotifyPlayer" class="frame">
 
-<p id="deviceStatus">Spotify player laden...</p>
-
-<button onclick="playTest()">Test muziek</button>
-
-</div>
-
-<div id="spotifyEmbed" class="frame">
+<p>Spotify verbonden ✔</p>
 
 <iframe
 src="https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM5M">
@@ -97,27 +83,18 @@ src="https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM5M">
 
 </div>
 
-<script src="https://sdk.scdn.co/spotify-player.js"></script>
-
 <script>
 
 const CLIENT_ID="VUL_JE_CLIENT_ID_HIER";
-const REDIRECT_URI=window.location.origin+window.location.pathname;
 
-let accessToken=null;
+const REDIRECT_URI=
+"https://joey226611.github.io/BadKamerSpiegelSite/badkamerOSupdates.html";
 
 function hideAll(){
 
 document.querySelectorAll(".frame").forEach(f=>{
 f.style.display="none";
-})
-
-}
-
-function openLocal(){
-
-hideAll();
-localFrame.style.display="block";
+});
 
 }
 
@@ -131,17 +108,7 @@ spotifyMenu.style.display="block";
 function openDefaultSpotify(){
 
 hideAll();
-spotifyEmbed.style.display="block";
-
-}
-
-function loadLocal(event){
-
-const file=event.target.files[0];
-const audio=document.getElementById("audio");
-
-audio.src=URL.createObjectURL(file);
-audio.play();
+spotifyPlayer.style.display="block";
 
 }
 
@@ -149,70 +116,40 @@ function loginSpotify(){
 
 const scopes="streaming user-read-email user-read-private";
 
-const authURL=
+const url=
 "https://accounts.spotify.com/authorize"+
 "?client_id="+CLIENT_ID+
-"&response_type=token"+
+"&response_type=code"+
 "&redirect_uri="+encodeURIComponent(REDIRECT_URI)+
 "&scope="+encodeURIComponent(scopes);
 
-window.location=authURL;
+window.location=url;
 
 }
 
-function getTokenFromURL(){
+function checkLogin(){
 
-const hash=window.location.hash;
+const params=new URLSearchParams(window.location.search);
 
-if(hash){
+const code=params.get("code");
 
-const params=new URLSearchParams(hash.replace("#",""));
-accessToken=params.get("access_token");
+if(code){
+
+localStorage.setItem("spotify_code",code);
+
+history.replaceState({},document.title,window.location.pathname);
+
+}
+
+if(localStorage.getItem("spotify_code")){
+
+openDefaultSpotify();
 
 }
 
 }
 
-window.onSpotifyWebPlaybackSDKReady=()=>{
-
-getTokenFromURL();
-
-if(!accessToken) return;
-
-hideAll();
-spotifyPlayer.style.display="block";
-
-const player=new Spotify.Player({
-name:"BadkamerOS Player",
-getOAuthToken:cb=>{cb(accessToken)},
-volume:0.5
-});
-
-player.addListener("ready",data=>{
-
-deviceStatus.innerText="Verbonden met Spotify 🎵";
-
-});
-
-player.connect();
-
-window.spotifyPlayer=player;
-
-};
-
-function playTest(){
-
-fetch("https://api.spotify.com/v1/me/player/play",{
-method:"PUT",
-headers:{
-Authorization:"Bearer "+accessToken
-},
-body:JSON.stringify({
-uris:["spotify:track:11dFghVXANMlKmJXsNCbNl"]
-})
-})
-
-}
+checkLogin();
 
 </script>
 
