@@ -3,211 +3,622 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Mirror</title>
+<title>Smart Mirror OS</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;400;600&display=swap" rel="stylesheet">
+
 <style>
-body{margin:0;padding:0;font-family:'Poppins',sans-serif;background:#0d0d0d;color:white;overflow:hidden;}
-#lockScreen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;}
-input,button{padding:15px 20px;font-size:20px;border-radius:8px;border:none;outline:none;}
-input{background:#1a1a1a;color:white;margin-bottom:10px;text-align:center;}
-button{background:#88cfff;cursor:pointer;}
+
+body{
+margin:0;
+background:#0c0c0c;
+color:white;
+font-family:Poppins;
+overflow:hidden;
+}
+
+/* LOCK */
+
+#lockScreen{
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+input{
+padding:15px;
+font-size:20px;
+background:#1a1a1a;
+border:none;
+color:white;
+text-align:center;
+}
+
+button{
+padding:15px;
+font-size:18px;
+background:#88cfff;
+border:none;
+cursor:pointer;
+}
 
 /* MIRROR */
-.mirror{width:100vw;height:100vh;display:none;position:relative;overflow:hidden;}
-.glass{position:absolute;width:100%;height:100%;backdrop-filter:blur(12px);background:rgba(255,255,255,0.02);pointer-events:none;}
+
+#mirror{
+display:none;
+width:100vw;
+height:100vh;
+position:relative;
+}
 
 /* CLOCK */
-.clock{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:90px;font-weight:200;transition:.6s;}
-.clock.topright{top:25px;right:25px;left:auto;transform:none;font-size:50px;}
+
+#clock{
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+font-size:90px;
+font-weight:200;
+transition:0.6s;
+}
+
+.topClock{
+top:25px;
+right:25px;
+left:auto;
+transform:none;
+font-size:50px;
+}
 
 /* GREETING */
-#greeting{position:absolute;top:25px;left:25px;font-size:24px;font-weight:600;opacity:0;transition:.5s;}
-#greeting.show{opacity:1;}
 
-/* CHOOSEMENU */
-#chooseMenu{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;gap:50px;opacity:0;pointer-events:none;transition:.6s;}
-#chooseMenu.active{opacity:1;pointer-events:auto;}
-.chooseBtn{width:120px;cursor:pointer;transition:.2s;}
-.chooseBtn:hover{transform:scale(1.1);}
-
-/* MUSIC UI */
-#musicUI{position:absolute;width:100%;height:100%;background:#0b0b0b;display:none;flex-direction:column;}
-.musicHeader{padding:30px;font-size:28px;font-weight:600;display:flex;justify-content:space-between;align-items:center;}
-.widgetGrid{display:flex;gap:40px;padding:40px;flex-wrap:wrap;}
-.widget{width:200px;cursor:pointer;}
-.widget img{width:100%;border-radius:10px;}
-.widgetTitle{margin-top:10px;font-size:18px;}
-#playlistView{display:none;padding:40px;}
-.track{display:flex;align-items:center;gap:20px;margin-bottom:15px;cursor:pointer;}
-.track img{width:60px;border-radius:6px;}
-#player{position:absolute;bottom:0;width:100%;padding:20px;background:#111;display:flex;align-items:center;gap:20px;}
-.controls button{font-size:18px;}
-.progress{flex:1;}
-#spotifyFrame{display:none;width:100%;height:70%;border:none;margin-top:20px;border-radius:10px;}
-</style>
-</head>
-<body>
-
-<!-- LOCKSCREEN -->
-<div id="lockScreen">
-<input type="password" id="codeInput" placeholder="Enter code">
-<button id="enterBtn">→</button>
-</div>
-
-<!-- MIRROR -->
-<div class="mirror" id="mirrorScreen">
-<div class="glass"></div>
-<div class="clock" id="clock"></div>
-<div id="greeting"></div>
-
-<div id="chooseMenu">
-<img src="images/Icons/MusicMode.png" class="chooseBtn" id="musicBtn">
-<img src="images/Icons/MirrorMode.png" class="chooseBtn" id="mirrorBtn">
-<img src="images/Icons/HomeMenu.png" class="chooseBtn" id="homeBtn">
-</div>
-
-<!-- MUSIC INTERFACE -->
-<div id="musicUI">
-<div class="musicHeader">
-<div>Music</div>
-<button onclick="closeMusic()">Back</button>
-</div>
-
-<div class="widgetGrid" id="playlistWidgets"></div>
-<div id="playlistView"></div>
-<div id="player">
-<div id="playerInfo"></div>
-<div class="controls">
-<button onclick="prevSong()">⏮</button>
-<button onclick="togglePlay()">⏯</button>
-<button onclick="nextSong()">⏭</button>
-<button onclick="toggleShuffle()">🔀</button>
-<button onclick="toggleLoop()">🔁</button>
-</div>
-<input type="range" id="progress" class="progress">
-</div>
-
-<!-- SPOTIFY MINI -->
-<iframe id="spotifyFrame" src="" allow="encrypted-media" allowtransparency="true"></iframe>
-</div>
-</div>
-
-<script>
-/* LOCKSCREEN */
-const correctCode="8008";
-const lockScreen=document.getElementById("lockScreen");
-const mirrorScreen=document.getElementById("mirrorScreen");
-const codeInput=document.getElementById("codeInput");
-const enterBtn=document.getElementById("enterBtn");
-const clock=document.getElementById("clock");
-const greeting=document.getElementById("greeting");
-const chooseMenu=document.getElementById("chooseMenu");
-const musicBtn=document.getElementById("musicBtn");
-const mirrorBtn=document.getElementById("mirrorBtn");
-const homeBtn=document.getElementById("homeBtn");
-
-/* TIMERS */
-let mirrorMode=false;
-let mirrorTimer=null;
-let chooseTimer=null;
-const CHOOSE_TIMEOUT=60000;
-const MIRROR_TIMEOUT=3600000;
-
-/* UNLOCK */
-if(localStorage.getItem("accessGranted")==="true"){
-lockScreen.style.display="none";
-mirrorScreen.style.display="block";
-startClock();
+#greeting{
+position:absolute;
+top:25px;
+left:25px;
+font-size:24px;
+opacity:0;
+transition:0.5s;
 }
-function unlock(){
-if(codeInput.value===correctCode){
-localStorage.setItem("accessGranted","true");
-lockScreen.style.display="none";
-mirrorScreen.style.display="block";
-startClock();
-}
-}
-enterBtn.onclick=unlock;
-codeInput.addEventListener("keydown",e=>{if(e.key==="Enter") unlock();});
 
-/* CLOCK & GREETING */
-function updateGreeting(){
-const h=new Date().getHours();
-let t;
-if(h>=5&&h<12)t="Goedemorgen";
-else if(h>=12&&h<18)t="Goedemiddag";
-else if(h>=18&&h<22)t="Goedenavond";
-else t="Goedenacht";
-greeting.textContent=t+", Gebruiker";
-}
-function startClock(){
-function update(){
-const n=new Date();
-clock.textContent=String(n.getHours()).padStart(2,"0")+":"+String(n.getMinutes()).padStart(2,"0")+":"+String(n.getSeconds()).padStart(2,"0");
-updateGreeting();
-}
-update();
-setInterval(update,1000);
+.showGreeting{
+opacity:1;
 }
 
 /* CHOOSE MENU */
-function startChooseTimer(){clearTimeout(chooseTimer);chooseTimer=setTimeout(()=>{closeChooseMenu();},CHOOSE_TIMEOUT);}
-function closeChooseMenu(){chooseMenu.classList.remove("active");greeting.classList.remove("show");clock.classList.remove("topright");clearTimeout(chooseTimer);}
-mirrorScreen.addEventListener("click",e=>{
-if(mirrorMode){mirrorMode=false;chooseMenu.classList.add("active");greeting.classList.add("show");startChooseTimer();return;}
-if(!chooseMenu.classList.contains("active")){clock.classList.add("topright");greeting.classList.add("show");chooseMenu.classList.add("active");startChooseTimer();}else{startChooseTimer();}
-});
 
-/* BUTTONS */
-mirrorBtn.onclick=function(e){if(!chooseMenu.classList.contains("active")) return;e.stopPropagation();mirrorMode=true;chooseMenu.classList.remove("active");greeting.classList.remove("show");clearTimeout(chooseTimer);mirrorTimer=setTimeout(()=>{mirrorMode=false;closeChooseMenu();},MIRROR_TIMEOUT);};
-homeBtn.onclick=function(e){if(!chooseMenu.classList.contains("active")) return;e.stopPropagation();closeChooseMenu();};
-
-/* ================== MUSIC MODE ================== */
-const playlists=[
-{type:"local",title:"SummerHits2026",image:"images/MusicPlayerThumbnails/summer.png",tracks:[
-{title:"Sunset Drive",artist:"DJ Wave",file:"Music/summer1.mp3",thumbnail:"images/MusicThumbnails/summer1.png"},
-{title:"Beach Party",artist:"Ocean Beats",file:"Music/summer2.mp3",thumbnail:"images/MusicThumbnails/summer2.png"}]},
-{type:"spotify",title:"Spotify Playlist",image:"images/MusicPlayerThumbnails/spotify.png",url:"https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM5M"}
-];
-
-const musicUI=document.getElementById("musicUI");
-const playlistWidgets=document.getElementById("playlistWidgets");
-const playlistView=document.getElementById("playlistView");
-const playerInfo=document.getElementById("playerInfo");
-const progress=document.getElementById("progress");
-const spotifyFrame=document.getElementById("spotifyFrame");
-
-let currentPlaylist=[];
-let currentIndex=0;
-let audio=new Audio();
-let shuffle=false;
-let loop=false;
-
-musicBtn.onclick=function(e){
-if(!chooseMenu.classList.contains("active")) return;e.stopPropagation();openMusicUI();
-};
-
-function openMusicUI(){
-musicUI.style.display="flex";
-playlistView.style.display="none";
-spotifyFrame.style.display="none";
-buildWidgets();
+#chooseMenu{
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+display:flex;
+gap:60px;
+opacity:0;
+pointer-events:none;
+transition:0.6s;
 }
-function closeMusic(){musicUI.style.display="none";playlistView.style.display="none";spotifyFrame.style.display="none";audio.pause();}
-function buildWidgets(){playlistWidgets.innerHTML="";playlists.forEach((p,i)=>{const div=document.createElement("div");div.className="widget";div.innerHTML=`<img src="${p.image}"><div class="widgetTitle">${p.title}</div>`;div.onclick=()=>{if(p.type==="local") openPlaylist(i); else openSpotify(i);};playlistWidgets.appendChild(div);});}
 
-function openPlaylist(i){playlistView.innerHTML="";playlistView.style.display="block";spotifyFrame.style.display="none";currentPlaylist=playlists[i].tracks;currentPlaylist.forEach((t,index)=>{const div=document.createElement("div");div.className="track";div.innerHTML=`<img src="${t.thumbnail}"><div><div>${t.title}</div><div>${t.artist}</div></div>`;div.onclick=()=>playSong(index);playlistView.appendChild(div);});}
-function playSong(i){currentIndex=i;const t=currentPlaylist[i];audio.src=t.file;audio.play();playerInfo.textContent=t.title+" - "+t.artist;}
-function togglePlay(){if(audio.paused) audio.play(); else audio.pause();}
-function nextSong(){currentIndex=shuffle?Math.floor(Math.random()*currentPlaylist.length):(currentIndex+1)%currentPlaylist.length;playSong(currentIndex);}
-function prevSong(){currentIndex--;if(currentIndex<0) currentIndex=currentPlaylist.length-1;playSong(currentIndex);}
-audio.ontimeupdate=()=>{progress.value=(audio.currentTime/audio.duration)*100;};
-progress.oninput=()=>{audio.currentTime=(progress.value/100)*audio.duration;};
-function toggleShuffle(){shuffle=!shuffle;}
-function toggleLoop(){loop=!loop;audio.loop=loop;}
+#chooseMenu.active{
+opacity:1;
+pointer-events:auto;
+}
+
+.iconBtn{
+width:120px;
+cursor:pointer;
+transition:0.2s;
+}
+
+.iconBtn:hover{
+transform:scale(1.1);
+}
+
+/* MUSIC UI */
+
+#musicUI{
+position:absolute;
+width:100%;
+height:100%;
+background:#0b0b0b;
+display:none;
+flex-direction:column;
+}
+
+.header{
+display:flex;
+justify-content:space-between;
+padding:30px;
+font-size:28px;
+}
+
+.grid{
+display:flex;
+gap:40px;
+padding:40px;
+}
+
+.widget{
+width:200px;
+cursor:pointer;
+}
+
+.widget img{
+width:100%;
+border-radius:10px;
+}
+
+.track{
+display:flex;
+align-items:center;
+gap:20px;
+padding:10px;
+cursor:pointer;
+}
+
+#player{
+position:absolute;
+bottom:0;
+width:100%;
+background:#111;
+padding:20px;
+display:flex;
+gap:20px;
+align-items:center;
+}
+
+#spotifyFrame{
+display:none;
+width:100%;
+height:70%;
+border:none;
+}
+
+/* SPOTIFY CHOICE */
+
+#spotifyChoice{
+position:absolute;
+width:100%;
+height:100%;
+background:#0b0b0b;
+display:none;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+gap:30px;
+}
+
+.choiceBtn{
+width:300px;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- LOCKSCREEN -->
+
+<div id="lockScreen">
+
+<input id="codeInput" type="password" placeholder="Enter code">
+
+<button onclick="unlock()">→</button>
+
+</div>
+
+<!-- MIRROR -->
+
+<div id="mirror">
+
+<div id="clock"></div>
+
+<div id="greeting"></div>
+
+<div id="chooseMenu">
+
+<img src="images/Icons/MusicMode.png" id="musicBtn" class="iconBtn">
+
+<img src="images/Icons/MirrorMode.png" id="mirrorBtn" class="iconBtn">
+
+<img src="images/Icons/HomeMenu.png" id="homeBtn" class="iconBtn">
+
+</div>
+
+<!-- MUSIC -->
+
+<div id="musicUI">
+
+<div class="header">
+
+<div>Music</div>
+
+<button onclick="closeMusic()">Back</button>
+
+</div>
+
+<div class="grid" id="widgets"></div>
+
+<div id="playlist"></div>
+
+<div id="player">
+
+<div id="songInfo"></div>
+
+<button onclick="prev()">⏮</button>
+
+<button onclick="togglePlay()">⏯</button>
+
+<button onclick="next()">⏭</button>
+
+<button onclick="toggleShuffle()">🔀</button>
+
+<button onclick="toggleLoop()">🔁</button>
+
+<input type="range" id="progress">
+
+</div>
+
+<iframe id="spotifyFrame"></iframe>
+
+</div>
+
+<!-- SPOTIFY CHOICE -->
+
+<div id="spotifyChoice">
+
+<button class="choiceBtn" onclick="loginSpotify()">
+
+Inloggen met eigen account
+
+</button>
+
+<button class="choiceBtn" onclick="openSpotifyEmbed()">
+
+Standaard Spotify
+
+</button>
+
+<button class="choiceBtn" onclick="closeSpotifyChoice()">
+
+Terug
+
+</button>
+
+</div>
+
+</div>
+
+<script>
+
+/* LOCK */
+
+const code="8008"
+
+function unlock(){
+
+if(document.getElementById("codeInput").value===code){
+
+localStorage.setItem("mirrorAccess","true")
+
+startMirror()
+
+}
+
+}
+
+if(localStorage.getItem("mirrorAccess")){
+
+startMirror()
+
+}
+
+function startMirror(){
+
+lockScreen.style.display="none"
+
+mirror.style.display="block"
+
+startClock()
+
+}
+
+/* CLOCK */
+
+function startClock(){
+
+setInterval(()=>{
+
+let d=new Date()
+
+clock.innerText=
+
+String(d.getHours()).padStart(2,"0")+":"+
+
+String(d.getMinutes()).padStart(2,"0")+":"+
+
+String(d.getSeconds()).padStart(2,"0")
+
+updateGreeting()
+
+},1000)
+
+}
+
+function updateGreeting(){
+
+let h=new Date().getHours()
+
+let g=""
+
+if(h<5)g="Goedenacht"
+
+else if(h<12)g="Goedemorgen"
+
+else if(h<18)g="Goedemiddag"
+
+else if(h<22)g="Goedenavond"
+
+else g="Goedenacht"
+
+greeting.innerText=g+", Gebruiker"
+
+}
+
+/* CHOOSE MENU */
+
+mirror.addEventListener("click",()=>{
+
+if(!chooseMenu.classList.contains("active")){
+
+clock.classList.add("topClock")
+
+greeting.classList.add("showGreeting")
+
+chooseMenu.classList.add("active")
+
+}
+
+})
+
+homeBtn.onclick=()=>{
+
+chooseMenu.classList.remove("active")
+
+clock.classList.remove("topClock")
+
+greeting.classList.remove("showGreeting")
+
+}
+
+/* MUSIC */
+
+musicBtn.onclick=()=>{
+
+musicUI.style.display="flex"
+
+buildWidgets()
+
+}
+
+function closeMusic(){
+
+musicUI.style.display="none"
+
+}
+
+/* PLAYLIST */
+
+const playlists=[
+
+{
+
+type:"local",
+
+title:"SummerHits2026",
+
+image:"images/MusicPlayerThumbnails/summer.png",
+
+tracks:[
+
+{
+
+title:"Sunset Drive",
+
+artist:"DJ Wave",
+
+file:"Music/summer1.mp3"
+
+},
+
+{
+
+title:"Beach Party",
+
+artist:"Ocean Beats",
+
+file:"Music/summer2.mp3"
+
+}
+
+]
+
+},
+
+{
+
+type:"spotify",
+
+title:"Spotify",
+
+image:"images/MusicPlayerThumbnails/spotify.png"
+
+}
+
+]
+
+/* BUILD WIDGETS */
+
+function buildWidgets(){
+
+widgets.innerHTML=""
+
+playlists.forEach((p,i)=>{
+
+let div=document.createElement("div")
+
+div.className="widget"
+
+div.innerHTML=`<img src="${p.image}"><div>${p.title}</div>`
+
+div.onclick=()=>{
+
+if(p.type==="local")openPlaylist(i)
+
+if(p.type==="spotify")openSpotifyChoice()
+
+}
+
+widgets.appendChild(div)
+
+})
+
+}
+
+/* LOCAL MUSIC */
+
+let audio=new Audio()
+
+let current=[]
+
+let index=0
+
+let shuffle=false
+
+let loop=false
+
+function openPlaylist(i){
+
+playlist.innerHTML=""
+
+current=playlists[i].tracks
+
+current.forEach((t,n)=>{
+
+let div=document.createElement("div")
+
+div.className="track"
+
+div.innerText=t.title+" - "+t.artist
+
+div.onclick=()=>play(n)
+
+playlist.appendChild(div)
+
+})
+
+}
+
+function play(i){
+
+index=i
+
+audio.src=current[i].file
+
+audio.play()
+
+songInfo.innerText=current[i].title+" - "+current[i].artist
+
+}
+
+function togglePlay(){
+
+if(audio.paused)audio.play()
+
+else audio.pause()
+
+}
+
+function next(){
+
+if(shuffle)index=Math.floor(Math.random()*current.length)
+
+else index=(index+1)%current.length
+
+play(index)
+
+}
+
+function prev(){
+
+index--
+
+if(index<0)index=current.length-1
+
+play(index)
+
+}
+
+function toggleShuffle(){
+
+shuffle=!shuffle
+
+}
+
+function toggleLoop(){
+
+loop=!loop
+
+audio.loop=loop
+
+}
 
 /* SPOTIFY */
-function openSpotify(i){playlistView.style.display="none";spotifyFrame.style.display="block";audio.pause();spotifyFrame.src=playlists[i].url;}
+
+function openSpotifyChoice(){
+
+spotifyChoice.style.display="flex"
+
+}
+
+function closeSpotifyChoice(){
+
+spotifyChoice.style.display="none"
+
+}
+
+function openSpotifyEmbed(){
+
+spotifyChoice.style.display="none"
+
+spotifyFrame.style.display="block"
+
+spotifyFrame.src="https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM5M"
+
+}
+
+/* SPOTIFY LOGIN */
+
+const CLIENT_ID="160369b6b21b47d8b8fa9da5590888f1"
+
+const REDIRECT="https://joey226611.github.io/BadKamerSpiegelSite/badkamerOSupdates.html"
+
+function loginSpotify(){
+
+const scopes="streaming user-read-email user-read-private"
+
+const url=
+
+`https://accounts.spotify.com/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT)}&scope=${encodeURIComponent(scopes)}&response_type=token&show_dialog=true`
+
+window.location=url
+
+}
+
 </script>
+
 </body>
 </html>
