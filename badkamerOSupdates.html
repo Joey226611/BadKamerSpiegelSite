@@ -4,27 +4,66 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Smart Mirror</title>
-
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;400;600&display=swap" rel="stylesheet">
 
 <style>
-
 body{
 margin:0;
-font-family:Poppins;
+padding:0;
+font-family:'Poppins',sans-serif;
 background:#0d0d0d;
 color:white;
 overflow:hidden;
 }
 
-/* mirror base */
+/* LOCKSCREEN */
+#lockScreen{
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+height:100vh;
+}
+
+input,button{
+padding:15px 20px;
+font-size:20px;
+border-radius:8px;
+border:none;
+outline:none;
+}
+
+input{
+background:#1a1a1a;
+color:white;
+margin-bottom:10px;
+text-align:center;
+}
+
+button{
+background:#88cfff;
+cursor:pointer;
+}
+
+/* MIRROR */
 .mirror{
 width:100vw;
 height:100vh;
 display:none;
 position:relative;
+overflow:hidden;
 }
 
+.glass{
+position:absolute;
+width:100%;
+height:100%;
+backdrop-filter:blur(12px);
+background:rgba(255,255,255,0.02);
+pointer-events:none;
+}
+
+/* CLOCK */
 .clock{
 position:absolute;
 top:50%;
@@ -43,11 +82,13 @@ transform:none;
 font-size:50px;
 }
 
+/* GREETING */
 #greeting{
 position:absolute;
 top:25px;
 left:25px;
 font-size:24px;
+font-weight:600;
 opacity:0;
 transition:.5s;
 }
@@ -56,6 +97,7 @@ transition:.5s;
 opacity:1;
 }
 
+/* CHOOSEMENU */
 #chooseMenu{
 position:absolute;
 top:50%;
@@ -84,7 +126,6 @@ transform:scale(1.1);
 }
 
 /* MUSIC UI */
-
 #musicUI{
 position:absolute;
 width:100%;
@@ -98,6 +139,9 @@ flex-direction:column;
 padding:30px;
 font-size:28px;
 font-weight:600;
+display:flex;
+justify-content:space-between;
+align-items:center;
 }
 
 .widgetGrid{
@@ -123,7 +167,6 @@ font-size:18px;
 }
 
 /* playlist */
-
 #playlistView{
 display:none;
 padding:40px;
@@ -143,7 +186,6 @@ border-radius:6px;
 }
 
 /* player */
-
 #player{
 position:absolute;
 bottom:0;
@@ -162,270 +204,246 @@ font-size:18px;
 .progress{
 flex:1;
 }
-
 </style>
 </head>
 
 <body>
 
+<!-- LOCKSCREEN -->
+<div id="lockScreen">
+<input type="password" id="codeInput" placeholder="Enter code">
+<button id="enterBtn">→</button>
+</div>
+
+<!-- MIRROR -->
 <div class="mirror" id="mirrorScreen">
+
+<div class="glass"></div>
 
 <div class="clock" id="clock"></div>
 <div id="greeting"></div>
 
 <div id="chooseMenu">
-
 <img src="images/Icons/MusicMode.png" class="chooseBtn" id="musicBtn">
-<img src="images/Icons/MirrorMode.png" class="chooseBtn">
+<img src="images/Icons/MirrorMode.png" class="chooseBtn" id="mirrorBtn">
 <img src="images/Icons/HomeMenu.png" class="chooseBtn" id="homeBtn">
-
 </div>
 
 <!-- MUSIC INTERFACE -->
-
 <div id="musicUI">
-
 <div class="musicHeader">
-Music
+<div>Music</div>
 <button onclick="closeMusic()">Back</button>
 </div>
-
 <div class="widgetGrid" id="playlistWidgets"></div>
-
 <div id="playlistView"></div>
-
 <div id="player">
-
 <div id="playerInfo"></div>
-
 <div class="controls">
-
 <button onclick="prevSong()">⏮</button>
 <button onclick="togglePlay()">⏯</button>
 <button onclick="nextSong()">⏭</button>
-
 <button onclick="toggleShuffle()">🔀</button>
 <button onclick="toggleLoop()">🔁</button>
-
 </div>
-
 <input type="range" id="progress" class="progress">
-
 </div>
-
 </div>
 
 </div>
 
 <script>
-
-/* CLOCK */
+/* ================== LOCKSCREEN ================== */
+const correctCode="8008";
+const lockScreen=document.getElementById("lockScreen");
+const mirrorScreen=document.getElementById("mirrorScreen");
+const codeInput=document.getElementById("codeInput");
+const enterBtn=document.getElementById("enterBtn");
 
 const clock=document.getElementById("clock");
+const greeting=document.getElementById("greeting");
+const chooseMenu=document.getElementById("chooseMenu");
+const musicBtn=document.getElementById("musicBtn");
+const mirrorBtn=document.getElementById("mirrorBtn");
+const homeBtn=document.getElementById("homeBtn");
 
-function updateClock(){
+let mirrorMode=false;
+let mirrorTimer=null;
+let chooseTimer=null;
+const CHOOSE_TIMEOUT=60000;
+const MIRROR_TIMEOUT=3600000;
+
+if(localStorage.getItem("accessGranted")==="true"){
+lockScreen.style.display="none";
+mirrorScreen.style.display="block";
+startClock();
+}
+
+function unlock(){
+if(codeInput.value===correctCode){
+localStorage.setItem("accessGranted","true");
+lockScreen.style.display="none";
+mirrorScreen.style.display="block";
+startClock();
+}
+}
+enterBtn.onclick=unlock;
+codeInput.addEventListener("keydown",e=>{if(e.key==="Enter") unlock();});
+
+/* ================== CLOCK & GREETING ================== */
+function updateGreeting(){
+const h=new Date().getHours();
+let t;
+if(h>=5&&h<12)t="Goedemorgen";
+else if(h>=12&&h<18)t="Goedemiddag";
+else if(h>=18&&h<22)t="Goedenavond";
+else t="Goedenacht";
+greeting.textContent=t+", Gebruiker";
+}
+
+function startClock(){
+function update(){
 const n=new Date();
 clock.textContent=
-String(n.getHours()).padStart(2,"0")+":"+
-String(n.getMinutes()).padStart(2,"0")+":"+
-String(n.getSeconds()).padStart(2,"0");
+String(n.getHours()).padStart(2,"0")+":"+String(n.getMinutes()).padStart(2,"0")+":"+String(n.getSeconds()).padStart(2,"0");
+updateGreeting();
+}
+update();
+setInterval(update,1000);
 }
 
-setInterval(updateClock,1000);
-updateClock();
-
-/* MUSIC DATA */
-
-const playlists=[
-
-{
-title:"SummerHits2026",
-image:"images/MusicPlayerThumbnails/summer.png",
-tracks:[
-
-{
-title:"Sunset Drive",
-artist:"DJ Wave",
-file:"Music/summer1.mp3",
-thumbnail:"images/MusicThumbnails/summer1.png"
-},
-
-{
-title:"Beach Party",
-artist:"Ocean Beats",
-file:"Music/summer2.mp3",
-thumbnail:"images/MusicThumbnails/summer2.png"
+/* ================== CHOOSE MENU ================== */
+function startChooseTimer(){
+clearTimeout(chooseTimer);
+chooseTimer=setTimeout(()=>{
+closeChooseMenu();
+},CHOOSE_TIMEOUT);
 }
 
-]
-
-},
-
-{
-title:"Chill Vibes",
-image:"images/MusicPlayerThumbnails/chill.png",
-tracks:[
-
-{
-title:"Night Air",
-artist:"LoFi Sky",
-file:"Music/chill1.mp3",
-thumbnail:"images/MusicThumbnails/chill1.png"
+function closeChooseMenu(){
+chooseMenu.classList.remove("active");
+greeting.classList.remove("show");
+clock.classList.remove("topright");
+clearTimeout(chooseTimer);
 }
 
-]
-
+mirrorScreen.addEventListener("click",e=>{
+if(mirrorMode){
+mirrorMode=false;
+chooseMenu.classList.add("active");
+greeting.classList.add("show");
+startChooseTimer();
+return;
 }
-
-];
-
-/* BUILD WIDGETS */
-
-const widgetContainer=document.getElementById("playlistWidgets");
-
-playlists.forEach((p,i)=>{
-
-const div=document.createElement("div");
-div.className="widget";
-
-div.innerHTML=`
-
-<img src="${p.image}">
-<div class="widgetTitle">${p.title}</div>
-
-`;
-
-div.onclick=()=>openPlaylist(i);
-
-widgetContainer.appendChild(div);
-
+if(!chooseMenu.classList.contains("active")){
+clock.classList.add("topright");
+greeting.classList.add("show");
+chooseMenu.classList.add("active");
+startChooseTimer();
+}else{
+startChooseTimer();
+}
 });
 
-/* PLAYLIST */
+/* BUTTONS */
+mirrorBtn.onclick=function(e){
+if(!chooseMenu.classList.contains("active")) return;
+e.stopPropagation();
+mirrorMode=true;
+chooseMenu.classList.remove("active");
+greeting.classList.remove("show");
+clearTimeout(chooseTimer);
+mirrorTimer=setTimeout(()=>{
+mirrorMode=false;
+closeChooseMenu();
+},MIRROR_TIMEOUT);
+};
 
+homeBtn.onclick=function(e){
+if(!chooseMenu.classList.contains("active")) return;
+e.stopPropagation();
+closeChooseMenu();
+};
+
+musicBtn.onclick=function(e){
+if(!chooseMenu.classList.contains("active")) return;
+e.stopPropagation();
+openMusicUI();
+};
+
+/* ================== MUSIC MODE ================== */
+
+const playlists=[
+{title:"SummerHits2026",image:"images/MusicPlayerThumbnails/summer.png",tracks:[
+{title:"Sunset Drive",artist:"DJ Wave",file:"Music/summer1.mp3",thumbnail:"images/MusicThumbnails/summer1.png"},
+{title:"Beach Party",artist:"Ocean Beats",file:"Music/summer2.mp3",thumbnail:"images/MusicThumbnails/summer2.png"}]},
+{title:"Chill Vibes",image:"images/MusicPlayerThumbnails/chill.png",tracks:[
+{title:"Night Air",artist:"LoFi Sky",file:"Music/chill1.mp3",thumbnail:"images/MusicThumbnails/chill1.png"}]}
+];
+
+const musicUI=document.getElementById("musicUI");
+const playlistWidgets=document.getElementById("playlistWidgets");
 const playlistView=document.getElementById("playlistView");
+const playerInfo=document.getElementById("playerInfo");
+const progress=document.getElementById("progress");
 
 let currentPlaylist=[];
 let currentIndex=0;
 let audio=new Audio();
-
-function openPlaylist(i){
-
-playlistView.innerHTML="";
-playlistView.style.display="block";
-
-currentPlaylist=playlists[i].tracks;
-
-currentPlaylist.forEach((t,index)=>{
-
-const div=document.createElement("div");
-div.className="track";
-
-div.innerHTML=`
-
-<img src="${t.thumbnail}">
-<div>
-<div>${t.title}</div>
-<div>${t.artist}</div>
-</div>
-
-`;
-
-div.onclick=()=>playSong(index);
-
-playlistView.appendChild(div);
-
-});
-
-}
-
-/* PLAYER */
-
-function playSong(i){
-
-currentIndex=i;
-const track=currentPlaylist[i];
-
-audio.src=track.file;
-audio.play();
-
-document.getElementById("playerInfo").textContent=
-track.title+" - "+track.artist;
-
-}
-
-/* CONTROLS */
-
-function togglePlay(){
-if(audio.paused) audio.play();
-else audio.pause();
-}
-
-function nextSong(){
-
-if(shuffle){
-currentIndex=Math.floor(Math.random()*currentPlaylist.length);
-}else{
-currentIndex=(currentIndex+1)%currentPlaylist.length;
-}
-
-playSong(currentIndex);
-
-}
-
-function prevSong(){
-
-currentIndex--;
-if(currentIndex<0) currentIndex=currentPlaylist.length-1;
-
-playSong(currentIndex);
-
-}
-
-/* PROGRESS */
-
-const progress=document.getElementById("progress");
-
-audio.ontimeupdate=()=>{
-progress.value=(audio.currentTime/audio.duration)*100;
-};
-
-progress.oninput=()=>{
-audio.currentTime=(progress.value/100)*audio.duration;
-};
-
-/* LOOP & SHUFFLE */
-
 let shuffle=false;
 let loop=false;
 
-function toggleShuffle(){
-shuffle=!shuffle;
-}
-
-function toggleLoop(){
-loop=!loop;
-audio.loop=loop;
-}
-
-/* MUSIC MODE */
-
-const musicUI=document.getElementById("musicUI");
-
-document.getElementById("musicBtn").onclick=()=>{
-
+function openMusicUI(){
 musicUI.style.display="flex";
-
-};
+playlistView.style.display="none";
+buildWidgets();
+}
 
 function closeMusic(){
-
 musicUI.style.display="none";
 playlistView.style.display="none";
-
 }
 
-</script>
+function buildWidgets(){
+playlistWidgets.innerHTML="";
+playlists.forEach((p,i)=>{
+const div=document.createElement("div");
+div.className="widget";
+div.innerHTML=`<img src="${p.image}"><div class="widgetTitle">${p.title}</div>`;
+div.onclick=()=>openPlaylist(i);
+playlistWidgets.appendChild(div);
+});
+}
 
+function openPlaylist(i){
+playlistView.innerHTML="";
+playlistView.style.display="block";
+currentPlaylist=playlists[i].tracks;
+currentPlaylist.forEach((t,index)=>{
+const div=document.createElement("div");
+div.className="track";
+div.innerHTML=`<img src="${t.thumbnail}"><div><div>${t.title}</div><div>${t.artist}</div></div>`;
+div.onclick=()=>playSong(index);
+playlistView.appendChild(div);
+});
+}
+
+function playSong(i){
+currentIndex=i;
+const t=currentPlaylist[i];
+audio.src=t.file;
+audio.play();
+playerInfo.textContent=t.title+" - "+t.artist;
+}
+
+function togglePlay(){if(audio.paused) audio.play(); else audio.pause();}
+function nextSong(){currentIndex=shuffle?Math.floor(Math.random()*currentPlaylist.length):(currentIndex+1)%currentPlaylist.length;playSong(currentIndex);}
+function prevSong(){currentIndex--;if(currentIndex<0) currentIndex=currentPlaylist.length-1;playSong(currentIndex);}
+audio.ontimeupdate=()=>{progress.value=(audio.currentTime/audio.duration)*100;};
+progress.oninput=()=>{audio.currentTime=(progress.value/100)*audio.duration;};
+function toggleShuffle(){shuffle=!shuffle;}
+function toggleLoop(){loop=!loop;audio.loop=loop;}
+
+</script>
 </body>
 </html>
