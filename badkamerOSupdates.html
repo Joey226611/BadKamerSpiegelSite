@@ -1,7 +1,9 @@
+```html
 <!DOCTYPE html>
-<html>
+<html lang="nl">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BadkamerOS</title>
 
 <style>
@@ -20,25 +22,27 @@ height:100vh;
 #app{
 width:420px;
 background:#1a1a1a;
-padding:20px;
-border-radius:12px;
+padding:25px;
+border-radius:14px;
 text-align:center;
+box-shadow:0 0 40px rgba(0,0,0,0.5);
 }
 
 button{
 width:100%;
-padding:12px;
-margin-top:10px;
-background:#2b2b2b;
+padding:14px;
+margin-top:12px;
+background:#262626;
 color:white;
 border:none;
-border-radius:8px;
+border-radius:10px;
 font-size:16px;
 cursor:pointer;
+transition:0.2s;
 }
 
 button:hover{
-background:#3a3a3a;
+background:#333;
 }
 
 .frame{
@@ -48,12 +52,12 @@ margin-top:15px;
 
 iframe{
 width:100%;
-height:90px;
+height:120px;
 border:none;
+border-radius:8px;
 }
 
 </style>
-
 </head>
 
 <body>
@@ -67,6 +71,7 @@ border:none;
 <div id="spotifyMenu" class="frame">
 
 <button onclick="loginSpotify()">Inloggen met eigen account</button>
+
 <button onclick="openDefaultSpotify()">Standaard Spotify</button>
 
 </div>
@@ -76,7 +81,9 @@ border:none;
 <p>Spotify verbonden ✔</p>
 
 <iframe
-src="https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM5M">
+src="https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM5M"
+allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+loading="lazy">
 </iframe>
 
 </div>
@@ -91,25 +98,19 @@ const REDIRECT_URI=
 "https://joey226611.github.io/BadKamerSpiegelSite/badkamerOSupdates.html";
 
 function hideAll(){
-
 document.querySelectorAll(".frame").forEach(f=>{
 f.style.display="none";
 });
-
 }
 
 function openSpotifyMenu(){
-
 hideAll();
-spotifyMenu.style.display="block";
-
+document.getElementById("spotifyMenu").style.display="block";
 }
 
 function openDefaultSpotify(){
-
 hideAll();
-spotifyPlayer.style.display="block";
-
+document.getElementById("spotifyPlayer").style.display="block";
 }
 
 function loginSpotify(){
@@ -155,3 +156,4 @@ checkLogin();
 
 </body>
 </html>
+```
